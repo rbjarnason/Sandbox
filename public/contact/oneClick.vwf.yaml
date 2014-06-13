@@ -57,7 +57,7 @@ methods:
     var _offset = this.Offset.internal_val;
     console.log(_offset);
     var targetTransform = worldpos;
-    debugger;
+    //debugger;
     var targetTrandformI =[];
     _offset = Mat4.multVec3(targetTransform,_offset,[]);
     console.log(_offset);

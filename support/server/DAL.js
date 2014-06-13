@@ -1281,7 +1281,7 @@ function getHistory(id,cb)
 }
 
 function createProfileFromFacebook(profile,cb) {
-    data = { id: profile.id, Username: profile.displayName, Email: profile.email, Avatar: "default.dae" };
+    data = { id: profile.id, Username: profile.displayName, Email: profile.emails[0].value, Avatar: "default.dae" };
     createUser(profile.id, data,function(ok,err){
         if (ok) {
             mailTools.newUser(profile.id, data.Email);
