@@ -32,7 +32,8 @@
     "nedb": "~0.10.2",
     "node-uuid": "1.4.x",
     "passport": "0.2.x",
-    "passport-facebook": "1.0.3"
+    "passport-facebook": "1.0.3",
+    "connect": "2.19.2"
   },
   "devDependencies": {},
   "scripts": {

@@ -41,8 +41,7 @@ exports.GetSessionData = function(request,cb)
   {
 	cb();
   return null;
-}
-	
+  }
   //extract our session ID from the header	
   cookies = {};
   var cookielist = request.headers.cookie.split(';');
@@ -52,16 +51,32 @@ exports.GetSessionData = function(request,cb)
 	var parts = cookielist[i].split('=');
     cookies[parts[0].trim()] = (parts[1] || '').trim();
   }
+
   var SessionID;
-  if (global.userStorageSessionId!=undefined) {
-    SessionID = global.userStorageSessionId;
+
+  if (request.session && request.session.passport && request.session.passport.user && request.session.passport.user.sessionId) {
+      SessionID = request.session.passport.user.sessionId;
+      global.log("Using request.session.id", 2);
+  } else if (request.cookieData!=undefined) {
+      parseCookieData =JSON.parse(request.cookieData.substring(2,request.cookieData.length));
+      if (parseCookieData.passport && parseCookieData.passport.user && parseCookieData.passport.user.sessionId) {
+          SessionID = parseCookieData.passport.user.sessionId;
+          global.log("Using request.cookieData", 2);
+      } else {
+          SessionID = cookies.session;
+          global.log("Using cookies session", 2);
+      }
   } else {
-    SessionID = cookies.session;
+      SessionID = cookies.session;
+      global.log("Using cookies session", 2);
   }
 
   //if there is no session ID, return ull
-  if(!SessionID){
-  cb(); return null}
+  if (!SessionID) {
+      global.log("No SessionId",2);
+      cb();
+      return null
+  }
   global.log(SessionID,3);
   var self = this;
 	this.getSessionByID(SessionID,function(thissession)

@@ -1279,6 +1279,7 @@ function serve (request, response)
    {
 
    			URL.loginData = __session;
+            console.log("URL.loginData="+JSON.stringify(URL.loginData, null, 4));
 			//Allow requests to submit the username in the URL querystring if not session data
 			var UID;
 			if(URL.loginData)
