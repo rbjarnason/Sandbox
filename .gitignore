@@ -15,5 +15,6 @@ config.json
 *.key
 *.pfx
 .idea
+/public/contact/videos
 /public/contact/local/*
 *.pem

@@ -305,7 +305,7 @@ function startVWF(){
                 key    : global.configuration.sessionKey ? global.configuration.sessionKey : 'virtual',
                 secret : global.configuration.sessionSecret ? global.configuration.sessionSecret : 'unsecure cookie secret',
                 cookie : {
-                    maxAge: global.configuration.sessionTimeoutMs ? global.configuration.sessionTimeoutMs : 600000
+                    maxAge: global.configuration.sessionTimeoutMs ? global.configuration.sessionTimeoutMs : 10000000
                 }
             }));
             app.use(passport.initialize());
