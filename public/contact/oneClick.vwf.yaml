@@ -37,6 +37,7 @@ properties:
       property: Offset
       displayname: offset
       type: vector
+      step: 0.1
     strength:
       property: strength
       displayname: Strength
@@ -53,20 +54,21 @@ methods:
   bringPlayerToMe: |
     var player =  _UserManager.GetAvatarForClientID(this.client)
     var worldpos = this.transformAPI.getWorldPosition();
-    player.transformAPI.lookat(worldpos);
     var _offset = this.Offset.internal_val;
     console.log(_offset);
     var targetTransform = worldpos;
     //debugger;
+    console.log(worldpos);
     var targetTrandformI =[];
-    _offset = Mat4.multVec3(targetTransform,_offset,[]);
+    //_offset = Mat4.multVec3(targetTransform,_offset,[]);
     console.log(_offset);
-    var worldpos = this.transformAPI.getWorldPosition();
-    _offset = Vec3.subtract(_offset,worldpos,[]);
+    //_offset = Vec3.subtract(_offset,worldpos,[]);
     _offset = Vec3.scale(_offset,this.strength,[]);
     _offset = Vec3.add(worldpos,_offset,[]);
     console.log(_offset);
     player.transformAPI.setPosition(_offset);
+    player.transformAPI.lookat(worldpos);
+
 events:
   pointerOver:
     parameters:
