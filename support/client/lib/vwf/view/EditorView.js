@@ -295,10 +295,12 @@ function InitializeEditor()
 		
 		require("vwf/view/editorview/Menubar").initialize();
 		require("vwf/view/editorview/SideTabs").initialize();
-		require("vwf/view/editorview/ChatSystemGUI").initialize();
+
 		$(document.head).append('<script type="text/javascript" src="vwf/view/localization/translate.js"></script>');
 		translateMenu();
 	}
+    // Always start the chat system
+    require("vwf/view/editorview/ChatSystemGUI").initialize();
 	require("vwf/view/editorview/SaveLoadTimer").initialize();
 	
 	require("vwf/view/editorview/TouchHandler").initialize();
