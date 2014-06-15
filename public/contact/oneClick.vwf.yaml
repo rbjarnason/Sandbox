@@ -54,7 +54,12 @@ methods:
   bringPlayerToMe: |
     var player =  _UserManager.GetAvatarForClientID(this.client)
     var worldpos = this.transformAPI.getWorldPosition();
-    var _offset = this.Offset.internal_val;
+    var _offset = this.Offset.internal_val.slice();
+    console.log(_offset);
+    //debugger;
+    _offset[0] = _offset[0]+=Math.random() * 8 - 5;
+    _offset[2] = _offset[2]+=Math.floor((Math.random() * 2) + 0);
+    //debugger;
     console.log(_offset);
     var targetTransform = worldpos;
     //debugger;
