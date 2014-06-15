@@ -150,7 +150,7 @@ define([], function ()
 					$('#pauseButton').css('background-color','');
 					$('#stopButton').css('background-color','');
 					$('#toolbar, .sidetab, #smoothmenu1, #statusbarinner, #smoothmenu1 ul li a').css('opacity',.8);
-					$('#toolbar, .sidetab, #smoothmenu1, #statusbarinner, #smoothmenu1 ul li a').css('background-color','red');
+					$('#toolbar, .sidetab, #smoothmenu1, #statusbarinner, #smoothmenu1 ul li a').css('background-color','grey');
 					$('#toolbar, .sidetab, #smoothmenu1, #statusbarinner, #smoothmenu1 ul li a').css('pointer-events','none');
 					_Editor.SelectObject(null);
 					_Editor.SetSelectMode('none');
