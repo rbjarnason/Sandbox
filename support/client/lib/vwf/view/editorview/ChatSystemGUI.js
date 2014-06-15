@@ -229,7 +229,7 @@ define(
 		}
 		$('#ChatWindow').dialog(
 		{
-			position: ['left', 'top'],
+			position: ['right', 'top'],
 			width: 300,
 			height: 400,
 			title: "Chat Window",
