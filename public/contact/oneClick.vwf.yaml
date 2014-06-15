@@ -73,6 +73,12 @@ methods:
     console.log(_offset);
     player.transformAPI.setPosition(_offset);
     player.transformAPI.lookat(worldpos);
+    var camera = player.Scene.camera;
+    camera.transformAPI.lookat(worldpos);
+    //debugger;
+    //camera.lookAt(worldpos);
+    //this.client.setCameraMode('Orbit');
+    //findcamera().lookat(worldpos);
 
 events:
   pointerOver:
