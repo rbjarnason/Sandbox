@@ -1296,6 +1296,21 @@ function createProfileFromFacebook(profile,cb) {
     });
 }
 
+function createProfileFromTwitter(profile,cb) {
+    data = { id: profile.id, Username: profile.displayName, Email: "", Avatar: "default.dae", Photo: profile.photos[0].value };
+    createUser(profile.id, data,function(ok,err){
+        if (ok) {
+            mailTools.newUser(profile.id, data.Email);
+            xapi.sendStatement(profile.id, xapi.verbs.registered);
+            cb("ok");
+        }
+        else {
+            xapi.sendStatement(profile.id, xapi.verbs.unsuccessful_registered_attempt);
+            global.log("Failed registration with "+err);
+            cb(err);
+        }
+    });
+}
 //create a new state from the old one, setting the publish settings for the new state
 //cb with the ID of the new state
 function Publish(id, publishSettings, cb)
@@ -1554,7 +1569,8 @@ function startup(callback)
 			DAL_Singleton.deleteUsers = deleteUsers;
 			DAL_Singleton.getAllUsersInfo = getAllUsersInfo;
             DAL_Singleton.createProfileFromFacebook = createProfileFromFacebook;
-			
+            DAL_Singleton.createProfileFromTwitter = createProfileFromTwitter;
+
 			DAL_Singleton.find = findInDB;
 			
 			DAL_Singleton.getInstance = getInstance;

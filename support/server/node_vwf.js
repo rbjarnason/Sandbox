@@ -356,12 +356,10 @@ function startVWF(){
             // Twitter authentication routing
             app.get(global.appPath+'/auth/twitter', passport.authenticate('twitter'));
 
-            app.get(global.appPath+'/auth/twitter/callback', function(req, res, next){
-                passport.authenticate('twitter', function(err, user, info){
+            app.get(global.appPath+'/auth/twitter/callback',
+                passport.authenticate('twitter', { failureRedirect: '/login' }),
+                function(req, res) {
                     var redirectUrl = '/';
-
-                    if (err) { return res.redirect('/login'); }
-
                     // If we have previously stored a redirectUrl, use that,
                     // otherwise, use the default.
                     if (req.session.redirectUrl) {
@@ -369,8 +367,7 @@ function startVWF(){
                         req.session.redirectUrl = null;
                     }
                     res.redirect(redirectUrl);
-                })(req, res, next);
-            });
+                });
 
             // route for logging out
             app.get('/fb_logout', function(req, res) {
