@@ -71,6 +71,7 @@ var ServerFeatures = require("./serverFeatures.js");
 
 var passport = require('passport');
 var FacebookStrategy = require('passport-facebook').Strategy;
+var TwitterStrategy = require('passport-twitter').Strategy;
 
 var sessions = require('./sessions');
 var xapi = require('./xapi');
@@ -341,6 +342,7 @@ function startVWF(){
 			//var listen = app.listen(port);
 			var listen = null;
 
+            // Facebook authentication routing
             app.get(global.appPath+'/auth/facebook',
                 passport.authenticate('facebook', { scope : 'email' }));
 
@@ -351,6 +353,24 @@ function startVWF(){
                     res.redirect('/');
                 });
 
+            // Twitter authentication routing
+            app.get(global.appPath+'/auth/twitter', passport.authenticate('twitter'));
+
+            app.get(global.appPath+'/auth/twitter/callback', function(req, res, next){
+                passport.authenticate('twitter', function(err, user, info){
+                    var redirectUrl = '/';
+
+                    if (err) { return res.redirect('/login'); }
+
+                    // If we have previously stored a redirectUrl, use that,
+                    // otherwise, use the default.
+                    if (req.session.redirectUrl) {
+                        redirectUrl = req.session.redirectUrl;
+                        req.session.redirectUrl = null;
+                    }
+                    res.redirect(redirectUrl);
+                })(req, res, next);
+            });
 
             // route for logging out
             app.get('/fb_logout', function(req, res) {
@@ -535,7 +555,34 @@ passport.use(new FacebookStrategy({
                                     done(null, user);
                                 });
                             } else {
-                                done("Error creating user " + results, null);
+                                done("Error creating user from facebook " + results, null);
+                            }
+                        });
+                    }
+                });
+            }
+        );
+    }
+));
+
+passport.use(new TwitterStrategy({
+        consumerKey: global.configuration.twitter_consumer_key,
+        consumerSecret: global.configuration.twitter_consumer_secret,
+        callbackURL: global.configuration.twitter_callback_url
+    },
+    function (accessToken, refreshToken, profile, done) {
+        process.nextTick(function () {
+                DAL.getUser(profile.id, function (user) {
+                    if (user) {
+                        done(null, user);
+                    } else {
+                        user = DAL.createProfileFromTwitter(profile, function (results) {
+                            if (results === "ok") {
+                                DAL.getUser(profile.id, function (user) {
+                                    done(null, user);
+                                });
+                            } else {
+                                done("Error creating user from twitter " + results, null);
                             }
                         });
                     }
