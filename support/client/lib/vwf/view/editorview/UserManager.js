@@ -323,8 +323,13 @@ define(function ()
             };
 
             if (!profile.avatarTexture) {
-                profile.avatarTexture = "https://graph.facebook.com/"+user_uid+"/picture?width=160&height=160";
+                if (profile.Photo) {
+                    profile.avatarTexture = profile.Photo;
+                } else {
+                    profile.avatarTexture = "https://graph.facebook.com/"+user_uid+"/picture?width=160&height=160";
+                }
             }
+            debugger;
             this.PlayerProto.properties.materialDef = {
 			    "color":
 			    {
