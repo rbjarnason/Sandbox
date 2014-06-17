@@ -1281,6 +1281,7 @@ function getHistory(id,cb)
 	});
 }
 
+// TODO Make dry
 function createProfileFromFacebook(profile,cb) {
     data = { id: profile.id, Username: profile.displayName, Email: profile.emails[0].value, Avatar: "default.dae" };
     createUser(profile.id, data,function(ok,err){
@@ -1312,6 +1313,23 @@ function createProfileFromTwitter(profile,cb) {
         }
     });
 }
+
+function createProfileFromGoogle(profile,cb) {
+    data = { id: profile.id, Username: profile.displayName, Email: profile.emails[0].value, Avatar: "default.dae", identifier: profile.identifier };
+    createUser(profile.id, data,function(ok,err){
+        if (ok) {
+            mailTools.newUser(profile.id, data.Email);
+            xapi.sendStatement(profile.id, xapi.verbs.registered);
+            cb("ok");
+        }
+        else {
+            xapi.sendStatement(profile.id, xapi.verbs.unsuccessful_registered_attempt);
+            global.log("Failed registration with "+err);
+            cb(err);
+        }
+    });
+}
+
 //create a new state from the old one, setting the publish settings for the new state
 //cb with the ID of the new state
 function Publish(id, publishSettings, cb)
@@ -1571,6 +1589,7 @@ function startup(callback)
 			DAL_Singleton.getAllUsersInfo = getAllUsersInfo;
             DAL_Singleton.createProfileFromFacebook = createProfileFromFacebook;
             DAL_Singleton.createProfileFromTwitter = createProfileFromTwitter;
+            DAL_Singleton.createProfileFromGoogle = createProfileFromGoogle;
 
 			DAL_Singleton.find = findInDB;
 			
