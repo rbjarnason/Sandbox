@@ -327,7 +327,7 @@ define(function ()
                 if (profile.Photo) {
                     //profile.avatarTexture = profile.Photo;
                 } else {
-                    profile.avatarTexture = "https://graph.facebook.com/"+profile.id+"/picture?width=160&height=160";
+                    profile.avatarTexture = "https://graph.facebook.com/"+profile.id.substring(9,profile.id.length)+"/picture?width=160&height=160";
                 }
             }
             this.PlayerProto.properties.materialDef = {
