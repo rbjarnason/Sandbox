@@ -542,6 +542,7 @@ passport.use(new FacebookStrategy({
     },
     function (accessToken, refreshToken, profile, done) {
         process.nextTick(function () {
+                profile.id = "facebook_"+profile.id;
                 DAL.getUser(profile.id, function (user) {
                     if (user) {
                         done(null, user);
@@ -569,6 +570,7 @@ passport.use(new TwitterStrategy({
     },
     function (accessToken, refreshToken, profile, done) {
         process.nextTick(function () {
+                profile.id = "twitter_"+profile.id;
                 DAL.getUser(profile.id, function (user) {
                     if (user) {
                         done(null, user);
