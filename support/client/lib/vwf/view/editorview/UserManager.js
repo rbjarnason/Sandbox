@@ -325,7 +325,9 @@ define(function ()
 
             if (!profile.avatarTexture) {
                 if (profile.Photo) {
-                    //profile.avatarTexture = profile.Photo;
+                    // Profile.avatarTexture = profile.Photo;
+                } else if (profile.identifier) {
+                    // Do nothing for now
                 } else {
                     profile.avatarTexture = "https://graph.facebook.com/"+profile.id.substring(9,profile.id.length)+"/picture?width=160&height=160";
                 }
