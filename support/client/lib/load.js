@@ -151,7 +151,7 @@ else
               {
 
               alertify.set({ labels: {
-                ok     : i18n.t("Login"),
+                ok     : i18n.t("Email, Facebook, Twitter or Google Login"),
                 cancel : i18n.t("Continue as Guest")
               } });
 
