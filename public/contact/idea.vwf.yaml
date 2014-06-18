@@ -1,0 +1,121 @@
+# Copyright 2012 United States Government, as represented by the Secretary of Defense, Under
+# Secretary of Defense (Personnel & Readiness).
+# 
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+---
+
+extends: prim.vwf
+properties:
+  _initialized: false
+  radius:
+    set: |
+            
+            this.radius = value;
+            this.radius = Math.max(this.radius,.001);
+            if(this._initialized == true)
+            this.dirtyStack(true);
+  height:
+    set: |
+            this.height = value;
+            this.height = Math.max(this.height,.001);
+            if(this._initialized == true)
+            this.dirtyStack(true);
+  EditorData:
+    URL:
+      displayname: URL
+      property: url
+      type: text
+    radius:
+      displayname: radius
+      property: radius
+      type: slider
+      min: 0
+      max: 20
+      step: .1
+    height:
+      displayname: height
+      property: height
+      type: slider
+      min: 0
+      max: 20
+      step: .01
+   url: 'https://nhs-citizen.yrpri.org/ideas/528-free-wifi-at-all-nhs-facilities.json'
+events:
+  pointerOver:
+  pointerOut:
+  pointerUp:
+  pointerDown:
+  pointerMove:
+  pointerClick:
+scripts:
+- |
+    this.initialize = function(){
+        
+        
+        if(this.id == "idea-vwf")
+            return;
+
+        // create a canvas element
+       	var canvas = document.createElement('canvas');
+       	var context = canvas.getContext('2d');
+       	context.font = "Bold 40px Arial";
+       	context.fillStyle = "rgba(0,100,100,0.45)";
+        context.fillText('Hello, world!', 0, 50);
+
+       	// canvas contents will be used for a texture
+       	var texture = new THREE.Texture(canvas)
+       	texture.needsUpdate = true;
+
+       var material = new THREE.MeshBasicMaterial( {map: texture, side:THREE.DoubleSide } );
+       material.transparent = true;
+
+       this.mesh = new THREE.Mesh(
+           new THREE.PlaneGeometry(canvas.width, canvas.height),
+           material
+         );
+
+       vwf.views[0].state.nodes[this.id].threeObject.add(this.mesh);
+       this.mesh.rotation.x = 0;//Math.PI/2;
+      
+       this._initialized = true;
+       this.dirtyStack(true);
+       if(this.materialDef)
+       this.setupMaterial(this.materialDef);             
+    }
+    this.Build = function()
+    {
+       console.log("In this.Build in yrpri_idea");
+    }
+
+    function findChildViewNode(node, name)
+    {
+        if(node.vwfID == name)
+            return node;
+        else if(node.children){
+            for(var i = 0; i < node.children.length; i++) {
+                var child = findChildViewNode(node.children[i],name);
+                if(child) return child;
+            }
+        }
+        return null;
+    }
+    function findVWFscene()
+    {
+         return  vwf.models[0].model.nodes["index-vwf"];
+    }
+    function findscene()
+    {
+         for(var i =0; i<vwf.views.length;i++)
+         {
+             if(vwf.views[i].module.id = 'vwf/view/MATH') return vwf.views[i].state.scenes["index-vwf"].MATHScene;
+         }
+         return null;
+    }

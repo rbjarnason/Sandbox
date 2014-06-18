@@ -972,8 +972,13 @@ define(
 		{
 			_Editor.CreatePrim('pyramid', _Editor.GetInsertPoint(), [1, 1, 1], 'checker.jpg', document.PlayerNumber, '');
 		});
-		
-		$('#LocationGoToPosition').click(function (e)
+        $('#MenuCreateIdea').click(function (e)
+        {
+            _Editor.CreatePrim('idea', _Editor.GetInsertPoint(), [1, 1, 1], 'checker.jpg', document.PlayerNumber, '');
+        });
+
+
+        $('#LocationGoToPosition').click(function (e)
 		{
 			_LocationTools.GoToPosition();
 		});
