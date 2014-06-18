@@ -74,7 +74,6 @@ define(["module", "version", "vwf/view", "vwf/view/editorview/lib/alertify.js-0.
 						this.addManager(_ScriptEditor);
 						this.addManager(_UndoManager);
 						this.addManager(_ModelLibrary);
-						this.addManager(_Notifier);
 						this.addManager(_MaterialEditor);
 						this.addManager(_PrimitiveEditor);
 						this.addManager(_InventoryManager);
@@ -108,8 +107,8 @@ define(["module", "version", "vwf/view", "vwf/view/editorview/lib/alertify.js-0.
 
 					require("vwf/view/editorview/WindowResize").initialize();
 					$('input[type="text"]').keypress(function(e){e.stopImmediatePropagation();});
-					
-					
+
+					this.addManager(_Notifier);
 					this.addManager(_UserManager);
 					this.addManager(_DataManager);
 					this.addManager(_Editor);
