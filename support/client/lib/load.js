@@ -151,11 +151,11 @@ else
               {
 
               alertify.set({ labels: {
-                ok     : i18n.t("Email, Facebook, Twitter or Google Login"),
+                ok     : i18n.t("Login"),
                 cancel : i18n.t("Continue as Guest")
               } });
 
-              alertify.confirm(i18n.t("You are viewing this world as a guest")+"."+i18n.t("You will be able to view the world, but not interact with it")+". "+i18n.t("Would you like to go back and log in")+"?",
+              alertify.confirm(i18n.t("You are viewing this world as a guest")+"."+i18n.t("You will be able to view the world, but not interact with it")+"."+i18n.t("Would you like to go back and log in")+"?",
                 function(e)
                 {
 
