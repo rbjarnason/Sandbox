@@ -62,7 +62,6 @@ define(["module", "version", "vwf/view", "vwf/view/editorview/lib/alertify.js-0.
 						//initialize the Material editor
 						window._MaterialEditor = require("vwf/view/editorview/MaterialEditor").getSingleton();
 						window._MaterialEditor.hide();
-						window._Notifier = require("vwf/view/editorview/Notifier").getSingleton();
 						window._ScriptEditor = require("vwf/view/editorview/ScriptEditor").getSingleton();;
 						window._ModelLibrary = require("vwf/view/editorview/_3DRIntegration").getSingleton();
 						window._Publisher = require("vwf/view/editorview/Publisher").getSingleton();
@@ -84,6 +83,7 @@ define(["module", "version", "vwf/view", "vwf/view/editorview/lib/alertify.js-0.
 						this.addManager(HierarchyManager);
 						this.addManager(_Publisher);
 					}
+                    window._Notifier = require("vwf/view/editorview/Notifier").getSingleton();
 					window._LocationTools = require("vwf/view/editorview/LocationTools").getSingleton();
 					window._UserManager = require("vwf/view/editorview/UserManager").getSingleton();;
 					
