@@ -1590,7 +1590,7 @@ function startup(callback)
             DAL_Singleton.createProfileFromFacebook = createProfileFromFacebook;
             DAL_Singleton.createProfileFromTwitter = createProfileFromTwitter;
             DAL_Singleton.createProfileFromGoogle = createProfileFromGoogle;
-
+			
 			DAL_Singleton.find = findInDB;
 			
 			DAL_Singleton.getInstance = getInstance;

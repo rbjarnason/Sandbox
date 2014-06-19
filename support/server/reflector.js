@@ -18,7 +18,7 @@ function startup(listen) {
     sio = sio.listen(listen, {
         log: false
     });
-    sio.configure(function () {
+    sio.configure(function() {
         //VWF requries websocket. We will not allow socket.io to fallback on flash or long polling
         sio.set('transports', ['websocket']);
         //Somehow, we still need to get the timeouts lower. This does tot seem to do it.
@@ -51,6 +51,7 @@ function getNamespace(socket) {
 
         var index = referer.indexOf(global.appPath);
         var namespace = referer.substring(index);
+
 
 
         if (namespace[namespace.length - 1] != "/")
@@ -102,11 +103,11 @@ function isPointerEvent(message) {
         message.member == 'pointerUp' ||
         message.member == 'pointerDown' ||
         message.member == 'pointerWheel'
-        )
+    )
 
 }
 //change up the ID of the loaded scene so that they match what the client will have
-var fixIDs = function (node) {
+var fixIDs = function(node) {
     if (node.children)
         var childnames = {};
     for (var i in node.children) {
@@ -127,7 +128,7 @@ var fixIDs = function (node) {
 
 function getBlankScene(state, instanceData, cb) {
     var state2 = JSON.parse(JSON.stringify(state));
-    fs.readFile("./public" + global.appPath + "/index.vwf.yaml", 'utf8', function (err, blankscene) {
+    fs.readFile("./public" + global.appPath + "/index.vwf.yaml", 'utf8', function(err, blankscene) {
         console.log(err);
         var err = null;
         try {
@@ -184,14 +185,12 @@ function getBlankScene(state, instanceData, cb) {
 function ServeSinglePlayer(socket, namespace, instancedata) {
     global.log('single player');
     var instance = namespace;
-    var state = SandboxAPI.getState(instance, function (state) {
-        if (!state) state = [
-            {
-                owner: undefined
-            }
-        ];
+    var state = SandboxAPI.getState(instance, function(state) {
+        if (!state) state = [{
+            owner: undefined
+        }];
 
-        getBlankScene(state, instancedata, function (blankscene) {
+        getBlankScene(state, instancedata, function(blankscene) {
             socket.emit('message', {
                 "action": "createNode",
                 "parameters": [blankscene],
@@ -219,7 +218,8 @@ function ServeSinglePlayer(socket, namespace, instancedata) {
 function WebSocketConnection(socket, _namespace) {
 
     //get the session information for the socket
-    sessions.GetSessionData(socket.handshake, function (loginData) {
+    sessions.GetSessionData(socket.handshake, function(loginData) {
+
 
 
         socket.loginData = loginData;
@@ -227,22 +227,22 @@ function WebSocketConnection(socket, _namespace) {
         var namespace = _namespace || getNamespace(socket);
 
         if (!namespace) {
-            socket.on('setNamespace', function (msg) {
+            socket.on('setNamespace', function(msg) {
                 global.log(msg.space);
                 WebSocketConnection(socket, msg.space);
                 socket.emit('namespaceSet', {});
             });
-            socket.on('connectionTest', function (msg) {
+            socket.on('connectionTest', function(msg) {
                 socket.emit('connectionTest', msg);
             })
             return;
         }
 
 
-        DAL.getInstance(namespace.replace(/\//g, "_"), function (instancedata) {
+        DAL.getInstance(namespace.replace(/\//g, "_"), function(instancedata) {
 
             if (!instancedata) {
-                require('./examples.js').getExampleMetadata(namespace.replace(/\//g, "_"), function (instancedata) {
+                require('./examples.js').getExampleMetadata(namespace.replace(/\//g, "_"), function(instancedata) {
                     if (instancedata) {
                         //if this is a single player published world, there is no need for the server to get involved. Server the world state and tell the client to disconnect
                         if (instancedata && instancedata.publishSettings && instancedata.publishSettings.singlePlayer) {
@@ -274,16 +274,16 @@ function runningInstance(id) {
     var log = fs.createWriteStream(SandboxAPI.getDataPath() + '//Logs/' + id.replace(/[\\\/]/g, '_'), {
         'flags': 'a'
     });
-    this.Log = function (message, level) {
+    this.Log = function(message, level) {
         if (global.logLevel >= level) {
             log.write(message + '\n');
             global.log(message + '\n');
         }
     }
-    this.clientCount = function () {
+    this.clientCount = function() {
         return Object.keys(this.clients).length;
     }
-    this.getLoadClient = function () {
+    this.getLoadClient = function() {
         var loadClient = null;
         for (var i in this.clients) {
             var testClient = this.clients[i];
@@ -294,7 +294,7 @@ function runningInstance(id) {
         }
         return loadClient;
     }
-    this.Error = function (message, level) {
+    this.Error = function(message, level) {
         var red, brown, reset;
         red = '\u001b[31m';
         brown = '\u001b[33m';
@@ -304,7 +304,7 @@ function runningInstance(id) {
             global.log(red + message + reset + '\n');
         }
     }
-    this.messageClients = function (message) {
+    this.messageClients = function(message) {
         //message to each user the join of the new client. Queue it up for the new guy, since he should not send it until after getstate
         var Message = messageCompress.pack(message);
         for (var i in this.clients) {
@@ -316,7 +316,7 @@ function runningInstance(id) {
             }
         }
     }
-    this.messageConnection = function (id, name, UID) {
+    this.messageConnection = function(id, name, UID) {
         var joinMessage = messageCompress.pack(JSON.stringify({
             "action": "fireEvent",
             "parameters": ["clientConnected", [id, name, UID]],
@@ -325,7 +325,7 @@ function runningInstance(id) {
         }));
         this.messageClients(joinMessage);
     }
-    this.messageDisconnection = function (id, name, UID) {
+    this.messageDisconnection = function(id, name, UID) {
         var joinMessage = messageCompress.pack(JSON.stringify({
             "action": "fireEvent",
             "parameters": ["clientDisconnected", [id, name, UID]],
@@ -338,7 +338,7 @@ function runningInstance(id) {
     //keep track of the timer for this instance
     var self = this;
     self.accum = 0;
-    var timer = function () {
+    var timer = function() {
 
         var now = process.hrtime();
         now = now[0] * 1e9 + now[1];
@@ -378,16 +378,16 @@ function runningInstance(id) {
 
 function runningInstanceList() {
     this.instances = {};
-    this.add = function (id) {
+    this.add = function(id) {
         this.instances[id] = new runningInstance(id);
     }
-    this.remove = function (id) {
+    this.remove = function(id) {
         delete this.instances[id];
     }
-    this.get = function (id) {
+    this.get = function(id) {
         return this.instances[id];
     }
-    this.has = function (id) {
+    this.has = function(id) {
         return this.instances[id] ? true : false;
     }
 }
@@ -396,6 +396,7 @@ var RunningInstances = new runningInstanceList();
 global.instances = RunningInstances;
 
 function ClientConnected(socket, namespace, instancedata) {
+
 
 
     var allowAnonymous = false;
@@ -407,6 +408,7 @@ function ClientConnected(socket, namespace, instancedata) {
     }
 
     var thisInstance = RunningInstances.get(namespace);
+
 
 
     var loadClient = null;
@@ -427,6 +429,7 @@ function ClientConnected(socket, namespace, instancedata) {
     thisInstance.clients[socket.id] = socket;
 
 
+
     socket.pending = true;
     socket.pendingList = [];
     //The client is the first, is can just load the index.vwf, and mark it not pending
@@ -441,13 +444,11 @@ function ClientConnected(socket, namespace, instancedata) {
         var instance = namespace;
         //Get the state and load it.
         //Now the server has a rough idea of what the simulation is
-        SandboxAPI.getState(namespace, function (state) {
+        SandboxAPI.getState(namespace, function(state) {
 
-            if (!state) state = [
-                {
-                    owner: instancedata.owner
-                }
-            ];
+            if (!state) state = [{
+                owner: instancedata.owner
+            }];
 
 
             thisInstance.state = {
@@ -459,7 +460,7 @@ function ClientConnected(socket, namespace, instancedata) {
                 children: {}
             };
 
-            thisInstance.state.findNode = function (id, parent) {
+            thisInstance.state.findNode = function(id, parent) {
                 var ret = null;
                 if (!parent) parent = this.nodes['index-vwf'];
                 if (parent.id == id)
@@ -472,7 +473,7 @@ function ClientConnected(socket, namespace, instancedata) {
                 }
                 return ret;
             }
-            thisInstance.state.deleteNode = function (id, parent) {
+            thisInstance.state.deleteNode = function(id, parent) {
                 if (!parent) parent = this.nodes['index-vwf'];
                 if (parent.children) {
                     for (var i in parent.children) {
@@ -483,7 +484,7 @@ function ClientConnected(socket, namespace, instancedata) {
                     }
                 }
             }
-            thisInstance.state.reattachParents = function (node) {
+            thisInstance.state.reattachParents = function(node) {
                 if (node && node.children) {
                     for (var i in node.children) {
                         node.children[i].parent = node;
@@ -495,7 +496,7 @@ function ClientConnected(socket, namespace, instancedata) {
             //The statebackup travels over the wire (though technically I guess we should have a copy of that data in our state already)
             //when it does, we can receive it here. Because the server is doing some tracking of state, we need to restore the server
             //side state.
-            thisInstance.state.callMethod = function (id, name, args) {
+            thisInstance.state.callMethod = function(id, name, args) {
                 if (id == 'index-vwf' && name == 'restoreState') {
                     console.log('Restore State from Play Backup');
                     //args[0][0] should be a vwf root node definition
@@ -512,7 +513,7 @@ function ClientConnected(socket, namespace, instancedata) {
                 "parameters": ["State loaded, sending..."],
                 "time": thisInstance.time
             })));
-            getBlankScene(state, instancedata, function (blankscene) {
+            getBlankScene(state, instancedata, function(blankscene) {
 
 
                 //only really doing this to keep track of the ownership
@@ -523,6 +524,7 @@ function ClientConnected(socket, namespace, instancedata) {
                     thisInstance.state.nodes['index-vwf'].children[childID].parent = thisInstance.state.nodes['index-vwf'];
 
                 }
+
 
 
                 thisInstance.cachedState = blankscene;
@@ -571,11 +573,11 @@ function ClientConnected(socket, namespace, instancedata) {
 
         thisInstance.messageConnection(socket.id);
 
-        var timeout = function (namespace) {
+        var timeout = function(namespace) {
 
             this.namespace = namespace;
             this.count = 0;
-            this.time = function () {
+            this.time = function() {
                 try {
 
                     var loadClients = [];
@@ -637,10 +639,9 @@ function ClientConnected(socket, namespace, instancedata) {
                     } else {
                         global.log('need to load from db');
                     }
-                } catch (e) {
-                }
+                } catch (e) {}
             }
-            this.deleteMe = function () {
+            this.deleteMe = function() {
                 global.clearTimeout(this.handle);
                 this.namespace.requestTimer = null;
             }
@@ -653,7 +654,7 @@ function ClientConnected(socket, namespace, instancedata) {
 
     }
 
-    socket.on('message', function (msg) {
+    socket.on('message', function(msg) {
 
         try {
 
@@ -673,6 +674,7 @@ function ClientConnected(socket, namespace, instancedata) {
             } else {
                 thisInstance.Log(JSON.stringify(message), 3);
             }
+
 
 
             var sendingclient = thisInstance.clients[socket.id];
@@ -726,7 +728,7 @@ function ClientConnected(socket, namespace, instancedata) {
                 if (rtcMessages.slice(2).indexOf(message.member) != -1 &&
                     sendingclient.loginData &&
                     params.sender == sendingclient.loginData.UID
-                    ) {
+                ) {
                     for (var i in thisInstance.clients) {
                         var client = thisInstance.clients[i];
                         if (client && client.loginData && client.loginData.UID == params.target)
@@ -823,7 +825,7 @@ function ClientConnected(socket, namespace, instancedata) {
             }
 
             var compressedMessage = messageCompress.pack(JSON.stringify(message))
-            //distribute message to all clients on given instance
+                //distribute message to all clients on given instance
             for (var i in thisInstance.clients) {
                 var client = thisInstance.clients[i];
 
@@ -834,6 +836,7 @@ function ClientConnected(socket, namespace, instancedata) {
                         thisInstance.requestTimer.deleteMe();
                     var state = message.result;
                     thisInstance.cachedState = JSON.parse(JSON.stringify(state));
+
 
 
                     if (message.client != i && client.pending === true) {
@@ -865,8 +868,8 @@ function ClientConnected(socket, namespace, instancedata) {
                     } else {
                         //simulate latency
                         if (global.latencySim > 0) {
-                            (function (__client, __message) {
-                                global.setTimeout(function () {
+                            (function(__client, __message) {
+                                global.setTimeout(function() {
                                     __client.emit('message', __message);
                                 }, 150)
                             })(client, compressedMessage);
@@ -888,7 +891,7 @@ function ClientConnected(socket, namespace, instancedata) {
     });
 
     //When a client disconnects, go ahead and remove the instance data
-    socket.on('disconnect', function () {
+    socket.on('disconnect', function() {
 
         try {
             var loginData = socket.loginData;
