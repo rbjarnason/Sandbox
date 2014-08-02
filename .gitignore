@@ -17,4 +17,6 @@ config.json
 .idea
 /public/contact/videos
 /public/contact/local/*
+/public/adl/sandbox/marsgame/*
 *.pem
+*.orig

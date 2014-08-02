@@ -24,21 +24,7 @@ var xapi = require('./xapi');
 // default path to data. over written by setup flags
 
 //generate a random id.
-function GUID() {
-	var S4 = function() {
-		return Math.floor(
-			Math.random() * 0x10000 /* 65536 */
-		).toString(16);
-	};
-
-	return (
-		S4() + S4() + "-" +
-		S4() + "-" +
-		S4() + "-" +
-		S4() + "-" +
-		S4() + S4() + S4()
-	);
-}
+var GUID = require('node-uuid').v4;
 
 
 
@@ -236,7 +222,15 @@ function updateInventoryItemMetadata(URL, data, response) {
 		respond(response, 500, 'no AID in query string');
 		return;
 	}
-	DAL.updateInventoryItemMetadata(URL.loginData.UID, URL.query.AID, JSON.parse(data), function() {
+	var parsedData;
+	try {
+		parsedData = JSON.parse(data);
+	} catch (e) {
+		global.error(e);
+		respond(response, 500, 'parse error');
+		return;
+	}
+	DAL.updateInventoryItemMetadata(URL.loginData.UID, URL.query.AID, parsedData, function() {
 		respond(response, 200, 'ok');
 	});
 }
@@ -339,7 +333,13 @@ function SaveProfile(URL, data, response) {
 		respond(response, 401, 'no login data saving profile ' + filename);
 		return;
 	}
-	data = JSON.parse(data);
+	try {
+		data = JSON.parse(data);
+	} catch (e) {
+		global.error(e);
+		respond(response, 500, 'parse error');
+		return;
+	}
 	//do not allow update of password in this way.
 	delete data.Password;
 	delete data.password;
@@ -373,7 +373,13 @@ function validateUsername(password) {
 
 
 function CreateProfile(URL, data, response) {
-	data = JSON.parse(data);
+
+	try {
+		data = JSON.parse(data);
+	} catch (e) {
+		respond(response, 500, 'parse error');
+		return;
+	}
 	//dont check the password - it's a big hash, so complexity rules are meaningless
 	data.Password = Hash(URL.query.P);
 	if (validateUsername(data.Username) !== true) {
@@ -409,7 +415,15 @@ function CheckAuthor(UID, assetFilename, callback) {
 		return;
 	} else {
 		fs.readFile(assetFilename, "utf8", function(err, file) {
-			var asset = JSON.parse(file);
+
+			var asset;
+			try {
+				asset = JSON.parse(file);
+			} catch (e) {
+				global.log(e);
+				callback(false);
+				return;
+			}
 
 			var storedAuthor = asset.Author;
 
@@ -420,7 +434,7 @@ function CheckAuthor(UID, assetFilename, callback) {
 		return;
 	}
 	return;
-	callback(false);
+
 }
 
 //Check that the UID is the owner of the state
@@ -432,7 +446,14 @@ function CheckOwner(UID, stateFilename, callback) {
 		return;
 	} else {
 		fs.readFile(stateFilename, "utf8", function(err, file) {
-			var asset = JSON.parse(file);
+			var asset;
+			try {
+				asset = JSON.parse(file);
+			} catch (e) {
+				global.log(e);
+				callback(false);
+				return;
+			}
 
 
 			var storedOwner = asset[asset.length - 1].owner;
@@ -462,7 +483,14 @@ function SaveAsset(URL, filename, data, response) {
 			if (!fs.existsSync(filename)) {
 				//Save the asset Author info
 				global.log('parse asset', 2);
-				var asset = JSON.parse(data);
+				var asset;
+				try {
+					asset = JSON.parse(data);
+				} catch (e) {
+					global.error(e);
+					respond(response, 500, 'parse error');
+					return;
+				}
 				asset.Author = URL.query.UID;
 				data = JSON.stringify(asset);
 				SaveFile(filename, data, response);
@@ -478,7 +506,14 @@ function SaveAsset(URL, filename, data, response) {
 						return;
 					} else {
 						//Over writing an asset that the user owns
-						var asset = JSON.parse(data);
+						var asset;
+						try {
+							asset = JSON.parse(data);
+						} catch (e) {
+							global.error(e);
+							respond(response, 500, 'parse error');
+							return;
+						}
 						asset.Author = URL.query.UID;
 						data = JSON.stringify(asset);
 						SaveFile(filename, data, response);
@@ -610,7 +645,7 @@ function Publish(URL, SID, publishdata, response) {
 		SID = global.appPath.replace(/\//g, "_") + '_' + SID + '_';
 	}
 
-	global.log(SID);
+	global.log(SID, 2);
 	DAL.getInstance(SID, function(state) {
 
 		if (!state) {
@@ -630,7 +665,7 @@ function Publish(URL, SID, publishdata, response) {
 		var publishSettings = null;
 		//The settings  for the published state. 
 		//have to handle these in the client side code, with some enforcement at the server
-		global.log(publishdata);
+		global.log(publishdata, 2);
 		if (publishdata) {
 			var singlePlayer = publishdata.SinglePlayer;
 			var camera = publishdata.camera;
@@ -753,7 +788,13 @@ function GetCameras(SID, response, URL) {
 			return;
 		} else {
 			// loop over all objects, check if camera
-			state = JSON.parse(state);
+			try {
+				state = JSON.parse(state);
+			} catch (e) {
+				global.error(e);
+				respond(response, 500, e.toString());
+				return;
+			}
 			ServeJSON(helper(state), response, URL);
 		}
 	});
@@ -766,6 +807,10 @@ function DeleteState(URL, SID, response) {
 		return;
 	}
 	DAL.getInstance(SID, function(state) {
+		if (!state) {
+			respond(response, 500, 'instance does not exist');
+			return;
+		}
 		if (state.owner != URL.loginData.UID && URL.loginData.UID != global.adminUID) {
 			respond(response, 401, 'User does not have permission to delete instance');
 			return;
@@ -968,7 +1013,13 @@ function setStateData(URL, data, response) {
 		respond(response, 401, 'Anonymous users cannot edit instances');
 		return;
 	}
-	data = JSON.parse(data);
+	try {
+		data = JSON.parse(data);
+	} catch (e) {
+		global.error(e);
+		respond(response, 500, 'parse error');
+		return;
+	}
 	var sid = URL.query.SID;
 	var statedata = {};
 	sid = sid.replace(/\//g, '_');
@@ -998,7 +1049,13 @@ function createState(URL, data, response) {
 		respond(response, 401, 'Anonymous users cannot create instances');
 		return;
 	}
-	data = JSON.parse(data);
+	try {
+		data = JSON.parse(data);
+	} catch (e) {
+		global.error(e);
+		respond(response, 500, 'parse error');
+		return;
+	}
 
 	var statedata = {};
 	statedata.objects = 0;
@@ -1025,7 +1082,12 @@ function getState(SID, cb) {
 	if (!cb) {
 		if (fs.existsSync(statefile)) {
 			file = fs.readFileSync(statefile, 'utf8');
-			return JSON.parse(file);
+			try {
+				return JSON.parse(file);
+			} catch (e) {
+				global.error(e);
+				return null;
+			}
 		}
 		return require('./examples.js').getState(SID);
 	}
@@ -1034,7 +1096,13 @@ function getState(SID, cb) {
 		fs.exists(statefile, function(exists) {
 			if (exists) {
 				fs.readFile(statefile, 'utf8', function(err, file) {
-					cb(JSON.parse(file));
+					var data;
+					try {
+						data = JSON.parse(file)
+					} catch (e) {
+						global.error(e);
+					}
+					cb(data);
 				});
 
 			} else {
@@ -1252,7 +1320,7 @@ function serve(request, response) {
 					break;
 				case "statehistory":
 					{
-						global.log("statehistory");
+						global.log("statehistory", 2);
 						DAL.getHistory(SID, function(statehistory) {
 							if (statehistory)
 								ServeJSON(statehistory, response, URL);
@@ -1528,7 +1596,6 @@ exports.getState = getState;
 
 exports.setDataPath = function(p) {
 	p = libpath.resolve(p);
-	global.log("datapath is " + p, 0);
 	datapath = p;
 }
 exports.setDAL = function(p) {

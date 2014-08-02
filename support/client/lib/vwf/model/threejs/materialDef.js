@@ -340,7 +340,8 @@
 				if(currentmat.metal != value.metal) currentmat.needsUpdate = true;
 				if(currentmat.combine != value.combine) currentmat.needsUpdate = true;
 
-				currentmat.shininess = value.shininess * 5 ;
+				//in most recent chrome and threejs , add .0001 because 0 causes error in shader
+				currentmat.shininess = (value.shininess * 5) +.0001;
 				
 				if(currentmat.depthtest != value.depthtest) currentmat.needsUpdate = true;	
 				if(value.depthtest === true || value.depthtest === undefined){
@@ -1087,7 +1088,7 @@
 			{
 				
 				if(threeObject.vwfID) return;
-				if(threeObject instanceof THREE.Mesh)
+				if(threeObject instanceof THREE.Mesh && threeObject.name !== 'BoneSelectionHandle')
 				{
 					list.push(threeObject);
 				}
@@ -1104,7 +1105,7 @@
 			{
 				
 				if(threeObject.vwfID) return;
-				if(threeObject instanceof THREE.Mesh)
+				if(threeObject instanceof THREE.Mesh && threeObject.name !== 'BoneSelectionHandle')
 				{
 					list.push(threeObject);
 				}

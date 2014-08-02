@@ -246,6 +246,7 @@ function TileCache()
 						
 						
 						
+
 						var algorithmShaderStringDiffuse = this.terrainGenerator.getDiffuseFragmentShader?this.terrainGenerator.getDiffuseFragmentShader():'';
 						var algorithmShaderStringNormal = this.terrainGenerator.getNormalFragmentShader? this.terrainGenerator.getNormalFragmentShader() : '';
 						var algorithmUniforms = this.terrainGenerator.getMaterialUniforms();
@@ -523,7 +524,7 @@ function TileCache()
 							}
 						}
 					}
-					geo.computeCentroids();
+					
 					return geo;
 				}				
 				this.returnMesh = function(mesh)	

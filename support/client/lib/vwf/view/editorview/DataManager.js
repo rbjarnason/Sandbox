@@ -126,7 +126,7 @@ define(function ()
 		}
 		this.fixExtendsAndArrays = function (object)
 		{
-			if (object.extends.patches) object.extends = object.extends.patches;
+			if (object.extends && object.extends.patches) object.extends = object.extends.patches;
 			for (var i in object.properties)
 			{
 				if (object.properties[i] && object.properties[i].constructor == Float32Array)
@@ -202,8 +202,11 @@ define(function ()
 			var scene = _Editor.getNode('index-vwf');
 
 			//if the editor is playing the scene, save the backup from before play was hit
-			if(scene.properties.playMode == 'play' && scene.properties.playBackup)
-				scene = scene.properties.playBackup;
+			if(vwf.getProperty(vwf.application(),'playMode') == 'play')
+			{
+				console.log('Skipping save because scene is playing.');
+				return;
+			}
 			
 			var nodes = [];
 			for (var i in scene.children)
