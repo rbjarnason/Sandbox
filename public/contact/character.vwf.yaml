@@ -113,16 +113,16 @@ scripts:
 
           }
 
-          //this.skin = findSkin(this.mesh);
-         // if(this.skin.material.ambient)
-          //{
-          //   this.skin.material.ambient.r = 1;
-          //   this.skin.material.ambient.g = 1;
-          //   this.skin.material.ambient.b = 1;
-        //  }
+          this.skin = findSkin(this.mesh);
+          if(this.skin.material.ambient)
+          {
+             this.skin.material.ambient.r = 1;
+             this.skin.material.ambient.g = 1;
+             this.skin.material.ambient.b = 1;
+          }
 
           
-          //this.skin.isAvatar = true;
+          this.skin.isAvatar = true;
           this.jumpcounter = 0.0;
           //this.stand();
          
@@ -491,10 +491,7 @@ scripts:
         
         var motionvec;
         
-        if(this.motionStack.length)
-            this.playSound('./vwfDataManager.svc/datafile/sounds/footsteps.mp3',true,.1);
-        else
-            this.pauseSound('./vwfDataManager.svc/datafile/sounds/footsteps.mp3');
+
         
         for(var i=0; i < this.motionStack.length; i++)
         {
@@ -507,33 +504,32 @@ scripts:
             }
             if(this.cycleName == 'turnleft')
             {
-                this.rotZ += +.07*updateFreqDivisor;
+                this.rotZ += .07*updateFreqDivisor;
                // this.mesh.setRotZ(this.rotZ);
                backupr = [0,0,1,this.rotZ/0.0174532925];
             }
              if(this.cycleName == 'straferight')
             {
-                 motionvec = MATH.mulMat4Vec3(MATH.angleAxis(backupr[3]*0.0174532925,[backupr[0],backupr[1],backupr[2]]),[-.03*updateFreqDivisor,0,0]);
-                
+                 motionvec = this.transformAPI.localToGlobalRotation([-.03*updateFreqDivisor,0,0]);
             }
             if(this.cycleName == 'strafeleft')
             {
-                 motionvec = MATH.mulMat4Vec3(MATH.angleAxis(backupr[3]*0.0174532925,[backupr[0],backupr[1],backupr[2]]),[.03*updateFreqDivisor,0,0]);
                  
+                 motionvec = this.transformAPI.localToGlobalRotation([.03*updateFreqDivisor,0,0]);
             }
             if(this.cycleName == 'walk')
             {
-                    motionvec = MATH.mulMat4Vec3(MATH.angleAxis(backupr[3]*0.0174532925,[backupr[0],backupr[1],backupr[2]]),[0,-.09*updateFreqDivisor,0]);
-                    
+                   
+                    motionvec = this.transformAPI.localToGlobalRotation([0,-.09*updateFreqDivisor,0]);
             }
             if(this.cycleName == 'walkback')
             {
-                    motionvec = MATH.mulMat4Vec3(MATH.angleAxis(backupr[3]*0.0174532925,[backupr[0],backupr[1],backupr[2]]),[0,+.09*updateFreqDivisor,0]);
+                    motionvec = this.transformAPI.localToGlobalRotation([0,.09*updateFreqDivisor,0]);
                    
             }
             if(this.cycleName == 'run')
             {
-                    motionvec = MATH.mulMat4Vec3(MATH.angleAxis(backupr[3]*0.0174532925,[backupr[0],backupr[1],backupr[2]]),[0,-.140*updateFreqDivisor,0]);
+                    motionvec = this.transformAPI.localToGlobalRotation([0,-.18*updateFreqDivisor,0]);
                     
             }
             
@@ -570,7 +566,7 @@ scripts:
             //for intersetions, and prevent penetration through objects
             if((MATH.lengthVec3(this.originalvelocity) > .001 || motionvec || this.jumpcounter > jumpstart || this.inMotion('turnleft') || this.inMotion('turnright')))
             {
-                //this.skin.PickPriority = -1;
+                this.skin.PickPriority = -1;
                 
                 
                 motionvec = motionvec ? motionvec : [0,0,0];
@@ -663,7 +659,7 @@ scripts:
                 }
                 _DEALLOC(intersect);
               }
-                //this.skin.PickPriority = 1;
+                this.skin.PickPriority = 1;
                  
             }
            
@@ -689,7 +685,7 @@ scripts:
           }
           
         
-        //this.skin.PickPriority = 1;
+        this.skin.PickPriority = 1;
         this.tbak = finalt;
         this.translation = finalt;
       
@@ -906,7 +902,7 @@ scripts:
         this.removeCycle('stand');
         this.addCycle('stand');
     }
-    this.reset = function(cycle)
+    this.resetCycle = function(cycle)
     {
       cycle.current = 0;
     }
@@ -916,7 +912,7 @@ scripts:
         if(this.inMotion('jump'))return;
         this.addMotion('jump');
         this.jumpcounter = 0;
-        this.reset(this.cycles.jump);
+        this.resetCycle(this.cycles.jump);
         this.removeCycle('jump');
         this.addCycle('jump');
         this.jumpstart = this.translation[2];
@@ -928,7 +924,7 @@ scripts:
         if(this.inMotion('jump'))return;
         this.addMotion('jump');
         this.jumpcounter = 0;
-        this.reset(this.cycles.runningjump);
+        this.resetCycle(this.cycles.runningjump);
         this.removeCycle('runningjump');
         this.addCycle('runningjump');
        
@@ -953,6 +949,11 @@ scripts:
                 {this.removeMotion('turnleft'); this.removeMotion('turnright'); this.removeCycle('turnleft'); this.removeCycle('turnright');}        
             if(!e.keysDown.W  && !e.keysDown.uparrow && this.inMotion('run'))
                 this.cancelRun(); 
+
+                
+            this.pauseSound('./vwfDataManager.svc/datafile/sounds/footsteps.mp3');
+
+
             return false;          
             
          }
@@ -1002,6 +1003,10 @@ scripts:
                { this.addMotion('turnright');    }
             if(e.mods.shift && e.keysDown.W)
                 this.run();  
+
+          
+            this.playSound('./vwfDataManager.svc/datafile/sounds/footsteps.mp3',true,5);
+            
             return false;
          }
     

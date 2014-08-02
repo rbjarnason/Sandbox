@@ -280,7 +280,7 @@ define(function() {
 
             if (!profile) profile = {};
 
-            this.PlayerProto.source = profile.avatarModel || './avatars/VWS_Business_Female1.DAE';
+			this.PlayerProto.source = profile.avatarModel || './avatars/avatar_0001_01.dae';
 
             this.PlayerProto.properties.cycles = {
                 stand: {
@@ -342,6 +342,13 @@ define(function() {
             };
 
 
+            if (!profile.avatarTexture) {
+                if (profile.Photo) {
+                    // Profile.avatarTexture = profile.Photo;
+                } else if (profile.id && profile.id.substring(0,8)==="facebook") {
+                    profile.avatarTexture = "https://graph.facebook.com/"+profile.id.substring(9,profile.id.length)+"/picture?width=160&height=160";
+                }
+            }
             this.PlayerProto.properties.materialDef = {
                 "color": {
                     "r": 1,
@@ -375,7 +382,7 @@ define(function() {
                     "offsetx": 0,
                     "offsety": 0,
                     "alpha": 1,
-                    "src": profile.avatarTexture || "./avatars/VWS_B_Female1-1.jpg",
+			            "src": profile.avatarTexture || "./avatars/160by160fb.jpg",
                     "mapInput": 0
                 }],
                 "type": "phong",
