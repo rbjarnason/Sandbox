@@ -1,0 +1,7 @@
+{
+	"Rotator":{
+		"url":"./contentlibraries/behaviors/vwf/rotator.vwf.json",
+		"preview":"./contentlibraries/behaviors/thumbs/rotate.jpg",
+		"type":"child"
+	}
+}
