@@ -927,13 +927,18 @@ define(["module", "vwf/model", "vwf/utility"], function(module, model, utility) 
 
                             var currentval = jsDriverSelf.kernel.getProperty(this.id, propertyName);
                             if (!currentval) return currentval;
-                            if (JSON.stringify(currentval) != JSON.stringify(jsDriverSelf.__WatchableCache[this.id + "-" + propertyName].internal_val)) {
-                                //it really seems like we should be reusing the objects in the cache, but it causes god awful problems that I 
-                                //cannot make any sense of. 
-                                // return jsDriverSelf.createWatchable(currentval, propertyName, this.id, undefined, this.id + "-" + propertyName)
-                                jsDriverSelf.updateWatchableCache(this.id, propertyName, currentval)
+                            //it's possible to fail to compate on circular json
+                            try {
+                                if (JSON.stringify(currentval) != JSON.stringify(jsDriverSelf.__WatchableCache[this.id + "-" + propertyName].internal_val)) {
+                                    //it really seems like we should be reusing the objects in the cache, but it causes god awful problems that I 
+                                    //cannot make any sense of. 
+                                    // return jsDriverSelf.createWatchable(currentval, propertyName, this.id, undefined, this.id + "-" + propertyName)
+                                    jsDriverSelf.updateWatchableCache(this.id, propertyName, currentval)
+                                }
+                                return jsDriverSelf.__WatchableCache[this.id + "-" + propertyName];
+                            } catch (e) {
+                                return jsDriverSelf.createWatchable(jsDriverSelf.kernel.getProperty(this.id, propertyName), propertyName, this.id, undefined, this.id + "-" + propertyName)
                             }
-                            return jsDriverSelf.__WatchableCache[this.id + "-" + propertyName];
                         } else
                             return jsDriverSelf.createWatchable(jsDriverSelf.kernel.getProperty(this.id, propertyName), propertyName, this.id, undefined, this.id + "-" + propertyName)
 
@@ -1001,7 +1006,7 @@ define(["module", "vwf/model", "vwf/utility"], function(module, model, utility) 
                 for (var i = 0; i < keys.length; i++) {
                     //be verycareful here. transform and transformAPI both start with the same dotnotation key, be sure that you check
                     //properly.
-                    if (keys[i].indexOf(nodeID + '-' + propertyName + '-') == 0 || keys[i] === nodeID + '-' + propertyName) {
+                    if (keys[i].indexOf(nodeID + '-' + propertyName + '.') == 0 || keys[i] === nodeID + '-' + propertyName) {
                         var watchable = this.__WatchableCache[keys[i]]
 
                         var new_prop_for_this_watchable;
@@ -1027,8 +1032,8 @@ define(["module", "vwf/model", "vwf/utility"], function(module, model, utility) 
                             dels.push(keys[i]);
                         } else {
                             //ok, we can save the watchable and just swap in the new underlying value
-                            watchable.internal_val = propertyValue;
-
+                            watchable.internal_val = new_prop_for_this_watchable;
+                            watchable.masterval = propertyValue;
                         }
                     }
                 }
@@ -1050,7 +1055,7 @@ define(["module", "vwf/model", "vwf/utility"], function(module, model, utility) 
                 try {
                     //unwrap watchables
                     var ret = getter.call(node);
-                    if (ret.internal_val) return ret.internal_val;
+                    if (ret && ret.internal_val) return ret.internal_val;
                     return ret;
                 } catch (e) {
                     this.logger.warn("gettingProperty", nodeID, propertyName, propertyValue,
@@ -1080,7 +1085,7 @@ define(["module", "vwf/model", "vwf/utility"], function(module, model, utility) 
 
             var node = this.nodes[nodeID];
             var methods = {};
-
+            if(!node) return methods;
 
             for (var i in node.methods) {
                 if (node.methods.hasOwnProperty(i)) {
@@ -1111,7 +1116,7 @@ define(["module", "vwf/model", "vwf/utility"], function(module, model, utility) 
 
             var node = this.nodes[nodeID];
             var events = {};
-
+            if(!node) return events;
 
 
             if (node.events)
@@ -1988,17 +1993,8 @@ define(["module", "vwf/model", "vwf/utility"], function(module, model, utility) 
             findListeners(Object.getPrototypeOf(node), eventName, true) : [];
 
         var nodeListeners = node.private.listeners && node.private.listeners[eventName] || [];
-        //make unique
-        nodeListeners = nodeListeners.filter(function(item) {
 
-            for (var i = 0; i < nodeListeners.length; i++) {
-                if (nodeListeners[i].context == item.context && nodeListeners[i].body == item.body && nodeListeners[i] != item)
-                    return false;
-            }
-            return true;
 
-        });
-        if (nodeListeners[0] && nodeListeners[1] && nodeListeners[0].body == nodeListeners[1].body) debugger;
         if (targetOnly) {
             return prototypeListeners.concat(nodeListeners.filter(function(listener) {
                 return listener.context == node || listener.context == node.private.origin; // in the prototypes, select jsDriverSelf-targeted listeners only

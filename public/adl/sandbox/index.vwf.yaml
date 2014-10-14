@@ -47,7 +47,11 @@ properties:
     set: |
             if(!this.sun) return;
             this.sun.intensity = value;   
-            this.sun.shadowDarkness = value;           
+  shadowDarkness:
+    value: .5
+    set: |
+            if(!this.sun) return;
+            this.sun.shadowDarkness = value;    
   ambientColor: 
     value: [.35, .35 , .35]
   fogColor: [1, 1, 1]
@@ -191,6 +195,13 @@ properties:
       property: sunDirection
       type: vector
       step: .05
+    sunShadowDarkness:
+      displayname: Sun Shadow Density
+      property: shadowDarkness
+      type: slider
+      step: .05
+      min: 0
+      max: 2  
     sky:
       displayname: 'Sky'
       type: 'sectionTitle'  
@@ -306,6 +317,7 @@ methods:
   playSound:
   setMusic:
   ___physics_world_reset:
+  activteOculusBridge:
 scripts:
 - |
     this.initialize = function(){
@@ -370,13 +382,13 @@ scripts:
        
        var grassTex = THREE.ImageUtils.loadTexture('textures/gridnew.png');
        
-      
+     
        ground.material.map = grassTex;
         grassTex.wrapS = THREE.RepeatWrapping;
         grassTex.wrapT = THREE.RepeatWrapping;
         grassTex.repeat.x = 64;
         grassTex.repeat.y = 64;
-       grassTex.anisotropy  = _dRenderer.getMaxAnisotropy();
+       grassTex.anisotropy  = 0;
        this.groundplane = ground;
        
        
@@ -407,7 +419,8 @@ scripts:
        this.sun.position.normalize();
        this.sun.position.multiplyScalar(100);
        this.sun.intensity = this.sunIntensity;
-       this.sun.shadowBias = -.005
+       this.sun.shadowBias = -.005;
+       this.sun.shadowDarkness = this.shadowDarkness;
        window._dGround = this.groundplane;
        this.groundplane.name = 'GroundPlane';
        //this.groundplane.visible = false;
@@ -1093,7 +1106,6 @@ scripts:
               this.center = MATH.addVec3(this.center,offset);
 
            }
-
         }
         if(this.cameramode != '3RDPerson' && this.cameramode != 'FirstPerson')
         {
@@ -1193,6 +1205,43 @@ scripts:
             
         } 
         this.callUpdateCallbacks();
+        findcamera().updateMatrixWorld();
+        findcamera().updateMatrix();
+        //this really belongs in the view 
+        if(this.oculusActive &&  _dView.vrHMDSensor)
+        {
+            var state = _dView.vrHMDSensor.getState();
+            //console.log(state.timeStamp);
+            var headPos= new THREE.Vector3(state.position.x,state.position.y,state.position.z);
+        
+            
+
+            var headPosVel= new THREE.Vector3(state.linearVelocity.x,state.linearVelocity.y,state.linearVelocity.z);
+            var headQuatVel= new THREE.Vector3(state.angularVelocity.x,state.angularVelocity.y,state.angularVelocity.z);
+            var headQuatAcc= new THREE.Vector3(state.angularAcceleration.x,state.angularAcceleration.y,state.angularAcceleration.z);
+            var headQuatEuler = new THREE.Euler(0,0,0,'XYZ');
+            var headQuat= new THREE.Quaternion(state.orientation.x,state.orientation.y,state.orientation.z,state.orientation.w); 
+            headQuatEuler.setFromQuaternion(headQuat);
+
+            var t = window.fpt || .2; //20ms
+            var x = headQuatEuler.x + headQuatVel.x * t + .5 * headQuatAcc.x *t*t;
+            var y = headQuatEuler.y + headQuatVel.y * t + .5 * headQuatAcc.y *t*t;
+            var z = headQuatEuler.z + headQuatVel.z * t + .5 * headQuatAcc.z *t*t;
+            headQuatEuler.x = x;
+            headQuatEuler.y = y;
+            headQuatEuler.z = z;
+            if(window.fpt > 0)
+              headQuat.setFromEuler(headQuatEuler);
+
+            headPos.applyMatrix3((new THREE.Matrix4()).extractRotation(findcamera().matrix));
+           
+
+            //forward predict rotation 10ms
+           
+            
+            //findcamera().position.add(headPos);
+            findcamera().quaternion.multiply(headQuat);    
+        }
         findcamera().updateMatrixWorld();
         findcamera().updateMatrix();
        
@@ -1450,7 +1499,7 @@ scripts:
             
             center.add(offset);
             this.center = [center.x,center.y,center.z];
-            findcamera().position = center;
+            findcamera().position.copy(center);
             
             
             
@@ -1532,14 +1581,18 @@ scripts:
     }    
 
 
-      this.pointerOver = function(){return true;}
+    this.pointerOver = function(){return true;}
     this.pointerOut= function(){return true;}
     this.pointerClick= function(){return true;}
     this.pointerDown= function(){return true;}
     this.pointerUp= function(){return true;}
-     this.pointerMove= function(){return true;}
+    this.pointerMove= function(){return true;}
 
-
+    //this really belongs in the view 
+    this.activteOculusBridge = function()
+    {
+        this.oculusActive = true;
+    }
         
     
     

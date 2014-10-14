@@ -36,18 +36,136 @@ function collectChildCollisions(node, list) {
     }
     if (node.enabled === true) {
         var col = node.buildCollisionShape();
-        if (col)
+        if (col) {
             list.push({
-                matrix: vwf.getProperty(node.id, 'worldTransform'),
+                matrix: vwf.getProperty(node.id, 'orthoWorldTransform'),  //don't use normal world transform. In non uniform spaces, the rotations are senseless. 
                 collision: col,
                 mass: node.mass,
-                localScale: node.localScale
+                localScale: node.localScale,
+                node: node
+
             });
+
+            //careful to orthonormalize the worldmatrix. Previous divide by localscale would always orthonormilize properly
+            //when world matrix !== localmatrix
+            var xlen = MATH.lengthVec3([list[list.length - 1].matrix[0],list[list.length - 1].matrix[1],list[list.length - 1].matrix[2]]);
+            var ylen = MATH.lengthVec3([list[list.length - 1].matrix[4],list[list.length - 1].matrix[5],list[list.length - 1].matrix[6]]);
+            var zlen = MATH.lengthVec3([list[list.length - 1].matrix[8],list[list.length - 1].matrix[9],list[list.length - 1].matrix[10]]);
+            list[list.length - 1].matrix[0] /= xlen;
+            list[list.length - 1].matrix[1] /= xlen;
+            list[list.length - 1].matrix[2] /= xlen;
+            //list[list.length - 1].matrix[12] /= xlen;
+
+            list[list.length - 1].matrix[4] /= ylen;
+            list[list.length - 1].matrix[5] /= ylen;
+            list[list.length - 1].matrix[6] /= ylen;
+            //list[list.length - 1].matrix[13] /= ylen;
+
+            list[list.length - 1].matrix[8] /= zlen;
+            list[list.length - 1].matrix[9] /= zlen;
+            list[list.length - 1].matrix[10] /= zlen;
+            //list[list.length - 1].matrix[13] /= zlen;
+
+          
+        }
     }
     return list;
 }
 
+function phyJoint(id,world,driver)
+{
+    this.id = id;
+    this.world = world;
+    this.bID = null;
+    this.aID = null;
+    this.bodyA = null;
+    this.bodyB = null;
+    this.initialized = false;
+    this.ready = false;
+    this.driver = driver;
+}
+phyJoint.prototype.destroy = function()
+{
+    if(this.ready)
+    {
+        this.world.removeConstraint(this.joint)
+        this.joint = null;
+        this.ready = false;    
+    }
+}
+phyJoint.prototype.setBodyAID = function(nodeID)
+{   
+    this.aID = nodeID;
+    this.destroy();
+}
+phyJoint.prototype.setBodyBID = function(nodeID)
+{
+    this.bID = nodeID;
+    this.destroy();
+}
+phyJoint.prototype.setBodyA = function(body)
+{   
+    this.bodyA = body;
+    this.destroy();
+}
+phyJoint.prototype.setBodyB = function(body)
+{
+    this.bodyB = body;
+    this.destroy();
+}
+phyJoint.prototype.update = function()
+{
+    if(!this.ready)
+    {
+        this.initialize();
+    }
+    
+}
+phyJoint.prototype.initialize = function()
+{
+    if(this.driver)
+    {
+        //find your body in the driver
+        if(this.aID)
+        {
+            if(this.driver.allNodes[this.aID] && this.driver.allNodes[this.aID].body)
+            {
+                this.setBodyA(this.driver.allNodes[this.aID].body);
+            }
+        }
+        //find your body in the driver
+        if(this.bID)
+        {
+            if(this.driver.allNodes[this.bID] && this.driver.allNodes[this.bID].body)
+            {
+                this.setBodyB(this.driver.allNodes[this.bID].body);
+            }
+        }
+        if(this.bodyA && this.bodyB)
+        {
+            this.joint = this.buildJoint();
+            this.world.addConstraint(this.joint);
+            this.ready = true;
+        }
+    }
+}
 
+function phyPointToPointJoint(id,world,driver)
+{
+    this.pointA = null;
+    this.pointB = null;
+    phyJoint.call(this,id,world,driver);
+}
+phyPointToPointJoint.prototype = new phyJoint();
+
+phyPointToPointJoint.prototype.buildJoint = function()
+{
+    this.pointA = [0,0,0];
+    this.pointB = [0,0,0];
+    var pa = new Ammo.btVector3(this.pointA[0],this.pointA[1],this.pointA[2]);
+    var pb = new Ammo.btVector3(this.pointB[0],this.pointB[1],this.pointB[2]);
+    return new Ammo.btPoint2PointConstraint(this.bodyA,this.bodyB,pa,pb);
+}
 function phyObject(id, world) {
     this.body = null;
     this.ready = false;
@@ -57,9 +175,9 @@ function phyObject(id, world) {
     this.initialized = false;
     this.collisionDirty = false;
     this.id = id;
-    this.restitution = 0;
-    this.friction = 1;
-    this.damping = .01;
+    this.restitution = .1;
+    this.friction = .5;
+    this.damping = .05;
     this.world = world;
     this.children = {};
     this.localOffset = null;
@@ -72,33 +190,70 @@ function phyObject(id, world) {
     this.deactivationTime = 0;
     this.linearFactor = [1, 1, 1];
     this.angularFactor = [1, 1, 1];
+    this.constantForce = null;
+    this.constantTorque = null;
+
+}
+phyObject.prototype.getWorldScale = function() {
+    var parent = this;
+    var localScale = [1, 1, 1];
+    while (parent) {
+        localScale[0] *= parent.localScale[0];
+        localScale[1] *= parent.localScale[1];
+        localScale[2] *= parent.localScale[2];
+        parent = parent.parent;
+    }
+    return localScale;
 
 }
 phyObject.prototype.addForce = function(vec) {
     if (vec.length !== 3) return;
     if (this.initialized === true) {
-        this.body.applyForce(new Ammo.btVector3(vec[0], vec[1], vec[2]));
+        var f = new Ammo.btVector3(vec[0], vec[1], vec[2]);
+        this.body.applyForce(f);
+        Ammo.destroy(f);
 
     }
+}
+//this is a global space force that is applied at every tick. Sort of a motor. Could be 
+//used to do custom per object gravity.
+phyObject.prototype.setConstantForce = function(vec) {
+        if(vec)
+            this.constantForce =  new Ammo.btVector3(vec[0], vec[1], vec[2]);
+        else
+            this.constantForce = null;
+}
+//a constant torque applied at every tick
+phyObject.prototype.setConstantTorque = function(vec) {
+        if(vec)
+            this.constantTorque =  new Ammo.btVector3(vec[0], vec[1], vec[2]);
+        else
+            this.constantTorque = null;
 }
 phyObject.prototype.addTorque = function(vec) {
     if (vec.length !== 3) return;
     if (this.initialized === true) {
-        this.body.applyTorque(new Ammo.btVector3(vec[0], vec[1], vec[2]));
+        var f = new Ammo.btVector3(vec[0], vec[1], vec[2]);
+        this.body.applyTorque(f);
+        Ammo.destroy(f);
 
     }
 }
 phyObject.prototype.addForceImpulse = function(vec) {
     if (vec.length !== 3) return;
     if (this.initialized === true) {
-        this.body.applyImpulse(new Ammo.btVector3(vec[0], vec[1], vec[2]));
+        var f = new Ammo.btVector3(vec[0], vec[1], vec[2]);
+        this.body.applyImpulse(f);
+        Ammo.destroy(f);
 
     }
 }
 phyObject.prototype.addTorqueImpulse = function(vec) {
     if (vec.length !== 3) return;
     if (this.initialized === true) {
-        this.body.applyTorqueImpulse(new Ammo.btVector3(vec[0], vec[1], vec[2]));
+        var f = new Ammo.btVector3(vec[0], vec[1], vec[2])
+        this.body.applyTorqueImpulse(f);
+        Ammo.destroy(f);
 
     }
 }
@@ -106,7 +261,11 @@ phyObject.prototype.addForceOffset = function(vec, pos) {
     if (vec.length !== 3) return;
     if (pos.length !== 3) return;
     if (this.initialized === true) {
-        this.body.applyForce(new Ammo.btVector3(vec[0], vec[1], vec[2]), new Ammo.btVector3(vec[0], vec[1], vec[2]));
+        var f = new Ammo.btVector3(vec[0], vec[1], vec[2]);
+        var g = new Ammo.btVector3(vec[0], vec[1], vec[2]);
+        this.body.applyForce(f, g);
+        Ammo.destroy(f);
+        Ammo.destroy(g);
 
     }
 }
@@ -114,7 +273,9 @@ phyObject.prototype.setLinearFactor = function(vec) {
     if (vec.length !== 3) return;
     this.linearFactor = vec;
     if (this.initialized === true) {
-        this.body.setLinearFactor(new Ammo.btVector3(vec[0], vec[1], vec[2]));
+        var f = new Ammo.btVector3(vec[0], vec[1], vec[2]);
+        this.body.setLinearFactor(f);
+        Ammo.destroy(f);
     }
 }
 phyObject.prototype.getLinearFactor = function(vec) {
@@ -127,7 +288,9 @@ phyObject.prototype.setAngularFactor = function(vec) {
     if (vec.length !== 3) return;
     this.angularFactor = vec;
     if (this.initialized === true) {
-        this.body.setAngularFactor(new Ammo.btVector3(vec[0], vec[1], vec[2]));
+        var f = new Ammo.btVector3(vec[0], vec[1], vec[2]);
+        this.body.setAngularFactor(f);
+        Ammo.destroy(f);
     }
 }
 phyObject.prototype.setMass = function(mass) {
@@ -138,6 +301,7 @@ phyObject.prototype.setMass = function(mass) {
         this.collision.calculateLocalInertia(this.mass, localInertia);
         this.body.setMassProps(this.mass, localInertia);
         this.body.updateInertiaTensor();
+        Ammo.destroy(localInertia);
         //todo: need to inform parents that mass has changed, might require recompute of center of mass for compound body
     }
 }
@@ -155,6 +319,7 @@ phyObject.prototype.initialize = function() {
         //      this.collision = this.buildCollisionShape();
         //  else
         {
+            
             //so, since we have child collision objects, we need to create a compound collision
             this.collision = new Ammo.btCompoundShape();
             this.collision.vwfID = this.id;
@@ -163,13 +328,21 @@ phyObject.prototype.initialize = function() {
             var z = 0;
             for (var i = 0; i < childCollisions.length; i++) {
                 //note!! at this point, this object must be a child of the scene, so transform === worldtransform
-                var thisworldmatrix = vwf.getProperty(this.id, 'transform');
+                var thisworldmatrix = this.transform;
                 var wmi = [];
                 Mat4.invert(thisworldmatrix, wmi);
                 var aslocal = Mat4.multMat(wmi, childCollisions[i].matrix, []);
                 childCollisions[i].local = aslocal;
                 //take into account that the collision body may be offset from the object center.
                 //this is true with assets, but not with prims
+                
+                //crazy as it may seem, there is no need to take into account here the local scale
+                //this is because we find the worldspace matrix between the child and this, thus flattening
+                //any complex hierarchy of transforms under this node in the graph. This flattening starts with the
+                //worldspace values, which already account for the scale.
+                //aslocal[12] *= childCollisions[i].localScale[0];
+                //aslocal[13] *= childCollisions[i].localScale[1];
+                //aslocal[14] *= childCollisions[i].localScale[2];
                 x += aslocal[12] + this.collisionBodyOffsetPos[0];
                 y += aslocal[13] + this.collisionBodyOffsetPos[1];
                 z += aslocal[14] + this.collisionBodyOffsetPos[2];
@@ -192,8 +365,10 @@ phyObject.prototype.initialize = function() {
                 var q = new Ammo.btQuaternion(quat[0], quat[1], quat[2], quat[3]);
                 startTransform.setRotation(q);
 
-
-                childCollisions[i].collision.setLocalScaling(new Ammo.btVector3(childCollisions[i].localScale[0], childCollisions[i].localScale[1], childCollisions[i].localScale[2]));
+                //careful not to set the childcollision scale when the child is actually this - otherwise we'd be setting it twice, once on the 
+                //collision body and once on the compound body
+                //if(childCollisions[i].node !== this)
+                //    childCollisions[i].collision.setLocalScaling(new Ammo.btVector3(childCollisions[i].localScale[0], childCollisions[i].localScale[1], childCollisions[i].localScale[2]));
 
                 this.collision.addChildShape(startTransform, childCollisions[i].collision);
 
@@ -208,29 +383,44 @@ phyObject.prototype.initialize = function() {
 
         var isDynamic = (this.mass != 0);
 
+
+
         var localInertia = new Ammo.btVector3(0, 0, 0);
         if (isDynamic)
             this.collision.calculateLocalInertia(this.mass, localInertia);
-
+        // Ammo.destroy(localInertia);
         //localoffset is used to offset the center of mass from the pivot point of the parent object
-        if (this.localOffset)
-            this.startTransform.setOrigin(new Ammo.btVector3(this.localOffset[0], this.localOffset[1], this.localOffset[2]));
-        else
-            this.startTransform.setOrigin(new Ammo.btVector3(0, 0, 0));
+        if (this.localOffset) {
+            var f = new Ammo.btVector3(this.localOffset[0] * this.localScale[0], this.localOffset[1] * this.localScale[1], this.localOffset[2] * this.localScale[2]);
+            this.startTransform.setOrigin(f);
+            // Ammo.destroy(f);
+        } else {
+            var f = new Ammo.btVector3(0, 0, 0);
+            this.startTransform.setOrigin(f);
+            // Ammo.destroy(f);
+        }
 
         var myMotionState = new Ammo.btDefaultMotionState(this.startTransform);
         var rbInfo = new Ammo.btRigidBodyConstructionInfo(this.mass, myMotionState, this.collision, localInertia);
         this.body = new Ammo.btRigidBody(rbInfo);
-        this.world.addRigidBody(this.body);
+
 
         this.body.setDamping(this.damping, this.damping);
         this.body.setFriction(this.friction);
         this.body.setRestitution(this.restitution);
 
-        this.body.setLinearVelocity(new Ammo.btVector3(this.linearVelocity[0], this.linearVelocity[1], this.linearVelocity[2]));
-        this.body.setAngularVelocity(new Ammo.btVector3(this.angularVelocity[0], this.angularVelocity[1], this.angularVelocity[2]));
-        this.body.setAngularFactor(new Ammo.btVector3(this.angularFactor[0], this.angularFactor[1], this.angularFactor[2]));
-        this.body.setLinearFactor(new Ammo.btVector3(this.linearFactor[0], this.linearFactor[1], this.linearFactor[2]));
+        var f = new Ammo.btVector3(this.linearVelocity[0], this.linearVelocity[1], this.linearVelocity[2]);
+        this.body.setLinearVelocity(f);
+       // Ammo.destroy(f);
+        var f = new Ammo.btVector3(this.angularVelocity[0], this.angularVelocity[1], this.angularVelocity[2]);
+        this.body.setAngularVelocity(f);
+       // Ammo.destroy(f);
+        var f = new Ammo.btVector3(this.angularFactor[0], this.angularFactor[1], this.angularFactor[2])
+        this.body.setAngularFactor(f);
+       // Ammo.destroy(f);
+        var f = new Ammo.btVector3(this.linearFactor[0], this.linearFactor[1], this.linearFactor[2]);
+        this.body.setLinearFactor(f);
+       // Ammo.destroy(f);
         this.body.forceActivationState(this.activationState);
         this.body.setDeactivationTime(this.deactivationTime);
         var mat = vwf.getProperty(this.id, 'transform');
@@ -239,8 +429,9 @@ phyObject.prototype.initialize = function() {
         //we must return through the kernel here so it knows that this is revelant to all instances of this node
         //not just the proto
 
-        this.collision.setLocalScaling(new Ammo.btVector3(this.localScale[0], this.localScale[1], this.localScale[2]));
 
+
+        this.world.addRigidBody(this.body);
         //so....... is this not handled by the cache and then set of properties that come in before initialize?
         vwf.setProperty(this.id, '___physics_activation_state', this.activationState);
         vwf.setProperty(this.id, '___physics_deactivation_time', this.deactivationTime);
@@ -271,17 +462,21 @@ phyObject.prototype.getLinearVelocity = function() {
 phyObject.prototype.setLinearVelocity = function(vel) {
     this.linearVelocity = vel;
     if (this.initialized === true) {
-        this.body.setLinearVelocity(new Ammo.btVector3(vel[0], vel[1], vel[2]));
+        var f = new Ammo.btVector3(vel[0], vel[1], vel[2]);
+        this.body.setLinearVelocity(f);
+        //Ammo.destroy(f);
     }
 }
 phyObject.prototype.setAngularVelocity = function(vel) {
     this.angularVelocity = vel;
     if (this.initialized === true) {
-        this.body.setAngularVelocity(new Ammo.btVector3(vel[0], vel[1], vel[2]));
+        var f = new Ammo.btVector3(vel[0], vel[1], vel[2]);
+        this.body.setAngularVelocity(f);
+       // Ammo.destroy(f);
     }
 }
 
-//note - we don't store up forces when the body is not initialized
+//note - we don't store up forces when the body is not initialized, so AddTorque called before init does nothing
 //maybe we should? Not sure that forces are stateful
 phyObject.prototype.getForce = function() {
     if (this.initialized === true) {
@@ -289,9 +484,15 @@ phyObject.prototype.getForce = function() {
         return [force.x(), force.y(), force.z()];
     }
 }
+
+//this is probably not what you're looking for. Force is an instantanious value, it
+//only has meaning within a tick cycle. This is only for replication. Use either addForce, addForceLocal
+//or setConstantForce
 phyObject.prototype.setForce = function(force) {
     if (this.initialized === true) {
-        this.body.setTotalForce(new btVector3(force[0], force[1], force[2]));
+        var f = new btVector3(force[0], force[1], force[2]);
+        this.body.setTotalForce(f);
+        //Ammo.destroy(f);
     }
 }
 phyObject.prototype.getTorque = function() {
@@ -300,9 +501,15 @@ phyObject.prototype.getTorque = function() {
         return [torque.x(), torque.y(), torque.z()];
     }
 }
+
+//this is probably not what you're looking for. Torque is an instantanious value, it
+//only has meaning within a tick cycle. This is only for replication. Use either addTorque 
+//or setConstantTorque
 phyObject.prototype.setTorque = function(torque) {
     if (this.initialized === true) {
-        this.body.setTotalTorque(new btVector3(torque[0], torque[1], torque[2]));
+        var f = new btVector3(torque[0], torque[1], torque[2]);
+        this.body.setTotalTorque(f);
+        //Ammo.destroy(f);
     }
 }
 
@@ -397,26 +604,25 @@ phyObject.prototype.disable = function() {
     }
 }
 
-var tempvec1 = [0,0,0];
-var tempvec2 = [0,0,0];
-var tempvec3 = [0,0,0];
-var tempquat1 = [0,0,0,0];
-var tempquat2 = [0,0,0,0];
-var tempquat3 = [0,0,0,0];
-var tempmat1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-var tempmat2 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-var tempmat3 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+var tempvec1 = [0, 0, 0];
+var tempvec2 = [0, 0, 0];
+var tempvec3 = [0, 0, 0];
+var tempquat1 = [0, 0, 0, 0];
+var tempquat2 = [0, 0, 0, 0];
+var tempquat3 = [0, 0, 0, 0];
+var tempmat1 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+var tempmat2 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+var tempmat3 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-function vecset(newv,old)
-{
-    for(var i=0; i < old.length; i++)
+function vecset(newv, old) {
+    for (var i = 0; i < old.length; i++)
         newv[i] = old[i];
     return newv;
 }
 
 phyObject.prototype.getTransform = function(outmat) {
 
-    if(!outmat)
+    if (!outmat)
         outmat = [];
     var transform = this.body.getWorldTransform();
     var o = transform.getOrigin();
@@ -431,23 +637,72 @@ phyObject.prototype.getTransform = function(outmat) {
     quat[1] = rot.y();
     quat[2] = rot.z();
     quat[3] = rot.w();
-    
+
     quat = Quaternion.normalize(quat, tempquat2);
     var mat = goog.vec.Quaternion.toRotationMatrix4(quat, tempmat1);
+
+    mat[0] *= this.localScale[0];
+    mat[1] *= this.localScale[0];
+    mat[2] *= this.localScale[0];
+
+    mat[4] *= this.localScale[1];
+    mat[5] *= this.localScale[1];
+    mat[6] *= this.localScale[1];
+
+    mat[8] *= this.localScale[2];
+    mat[9] *= this.localScale[2];
+    mat[10] *= this.localScale[2];
+
     var worldoffset = goog.vec.Mat4.multVec3(mat, this.localOffset, tempmat2)
-    mat[12] = pos[0] - worldoffset[0];
-    mat[13] = pos[1] - worldoffset[1];
-    mat[14] = pos[2] - worldoffset[2];
-    this.transform = vecset(this.transform, mat);
+    mat[12] = pos[0] - worldoffset[0] / this.localScale[0];
+    mat[13] = pos[1] - worldoffset[1] / this.localScale[1];
+    mat[14] = pos[2] - worldoffset[2] / this.localScale[2];
+
+
+    //since the value is orthonormal, scaling is easy.
+
+    //this.transform = vecset(this.transform, mat);
     outmat = vecset(outmat, mat);
     return outmat;
 }
+
+function ScaleFromMatrix(mat) {
+    var x = [mat[0], mat[1], mat[2]];
+    var y = [mat[4], mat[5], mat[9]];
+    var z = [mat[8], mat[9], mat[10]];
+
+    return [MATH.lengthVec3(x), MATH.lengthVec3(y), MATH.lengthVec3(z)];
+
+}
+
 phyObject.prototype.setTransform = function(matrix) {
-    this.transform = matrix
-    if (this.initialized === true) {
+    matrix = Mat4.clone(matrix);
+    
+    var oldScale = vecset([], this.localScale);
+    this.localScale = ScaleFromMatrix(matrix);
+    matrix[0] /= this.localScale[0];
+    matrix[1] /= this.localScale[0];
+    matrix[2] /= this.localScale[0];
+
+    matrix[4] /= this.localScale[1];
+    matrix[5] /= this.localScale[1];
+    matrix[6] /= this.localScale[1];
+
+    matrix[8] /= this.localScale[2];
+    matrix[9] /= this.localScale[2];
+    matrix[10] /= this.localScale[2];
+    this.transform = matrix;
+    //todo: the compound collision of the parent does not need to be rebuild, just transforms updated
+    //need new flag for this instead of full rebuild
+    if (this.enabled === true && this.parent.id !== vwf.application() || MATH.distanceVec3(this.localScale, oldScale) > .0001) {
+        this.markRootBodyCollisionDirty();
+    }
+    else if (this.initialized === true) {
 
         this.lastTickRotation = null;
         this.thisTickRotation = null;
+
+       
 
         var startTransform = new Ammo.btTransform();
         startTransform.getOrigin().setX(matrix[12]);
@@ -469,18 +724,18 @@ phyObject.prototype.setTransform = function(matrix) {
 
         var q = new Ammo.btQuaternion(quat[0], quat[1], quat[2], quat[3]);
         startTransform.setRotation(q);
+        Ammo.destroy(q);
 
         this.body.setCenterOfMassTransform(startTransform);
-        if (this.collision)
-            this.collision.setLocalScaling(new Ammo.btVector3(this.localScale[0], this.localScale[1], this.localScale[2]));
+        if (this.collision) {
+            //update the localscaling
+
+        }
         if (this.mass == 0) {
 
         }
     }
-    //todo: the compound collision of the parent does not need to be rebuild, just transforms updated
-    //need new flag for this instead of full rebuild
-    if (this.enabled === true && this.parent.id !== vwf.application())
-        this.markRootBodyCollisionDirty();
+    
 
 
 }
@@ -498,14 +753,33 @@ phyObject.prototype.markRootBodyCollisionDirty = function() {
 }
 phyObject.prototype.update = function() {
 
-    if (this.enabled === true && this.initialized === false)
+    if (this.enabled === true && this.initialized === false) {
+        //ahhhhhhhh almost missed this. we were loosing some state in the cached properties! They were never re-set after a re-initialize
         this.initialize();
 
+    }
+    if(this.initialized === true)
+    {
+        //these are applied in global space. You can cancel gravity for a specify object with a contant force of negative gravity
+        if(this.constantForce)
+        {
+            this.body.activate();
+            this.body.applyForce(this.constantForce);
+           
+        }
+        if(this.constantTorque)
+        {
+            this.body.activate();
+            this.body.applyTorque(this.constantTorque);
+            
+        }
+        
+    }
     if (this.collisionDirty && this.initialized === true) {
         var backupTrans = this.getTransform();
         this.deinitialize();
         this.initialize();
-        this.setTransform(backupTrans);
+        //this.setLocalScaling(backupTrans);
         this.collisionDirty = false;
     }
 }
@@ -520,7 +794,7 @@ function phySphere(id, world) {
 }
 phySphere.prototype = new phyObject();
 phySphere.prototype.buildCollisionShape = function() {
-    return new Ammo.btSphereShape(this.radius);
+    return new Ammo.btSphereShape(this.radius * this.getWorldScale()[0]);
 }
 
 phySphere.prototype.setRadius = function(radius) {
@@ -543,7 +817,9 @@ function phyBox(id, world) {
 }
 phyBox.prototype = new phyObject();
 phyBox.prototype.buildCollisionShape = function() {
-    return new Ammo.btBoxShape(new Ammo.btVector3(this.length, this.width, this.height));
+    var f = new Ammo.btVector3(this.length * this.getWorldScale()[0], this.width * this.getWorldScale()[1], this.height * this.getWorldScale()[2]);
+    return new Ammo.btBoxShape(f);
+
 }
 
 phyBox.prototype.setLength = function(length) {
@@ -581,7 +857,7 @@ function phyCylinder(id, world) {
 }
 phyCylinder.prototype = new phyObject();
 phyCylinder.prototype.buildCollisionShape = function() {
-    return new Ammo.btCylinderShapeZ(new Ammo.btVector3(this.radius, this.height, this.height));
+    return new Ammo.btCylinderShapeZ(new Ammo.btVector3(this.radius * this.getWorldScale()[0], this.height * this.getWorldScale()[1], this.height * this.getWorldScale()[2]));
 }
 
 phyCylinder.prototype.setRadius = function(radius) {
@@ -611,7 +887,7 @@ function phyCone(id, world) {
 }
 phyCone.prototype = new phyObject();
 phyCone.prototype.buildCollisionShape = function() {
-    return new Ammo.btConeShapeZ(this.radius, this.height);
+    return new Ammo.btConeShapeZ(this.radius * this.getWorldScale()[0], this.height * this.getWorldScale()[1]);
 }
 
 phyCone.prototype.setRadius = function(radius) {
@@ -640,7 +916,7 @@ function phyPlane(id, world) {
 }
 phyPlane.prototype = new phyObject();
 phyPlane.prototype.buildCollisionShape = function() {
-    return new Ammo.btBoxShape(new Ammo.btVector3(this.length, this.width, .001));
+    return new Ammo.btBoxShape(new Ammo.btVector3(this.length * this.getWorldScale()[0], this.width * this.getWorldScale()[1], .001));
 }
 
 phyPlane.prototype.setLength = function(length) {
@@ -691,27 +967,28 @@ phyAsset.prototype.buildCollisionShape = function() {
     transform.getOrigin().setY(this.collisionBodyOffsetPos[1]);
     transform.getOrigin().setZ(this.collisionBodyOffsetPos[2]);
 
-    var q = new Ammo.btQuaternion(this.collisionBodyOffsetRot[0], this.collisionBodyOffsetRot[1], this.collisionBodyOffsetRot[2], this.collisionBodyOffsetRot[3]);
+    //var q = new Ammo.btQuaternion(this.collisionBodyOffsetRot[0], this.collisionBodyOffsetRot[1], this.collisionBodyOffsetRot[2], this.collisionBodyOffsetRot[3]);
     //transform.setRotation(q);
 
     var col = this.buildCollisionShapeInner();
     if (col) {
         compound.addChildShape(transform, col);
+        compound.setLocalScaling(new Ammo.btVector3(this.getWorldScale()[0], this.getWorldScale()[1], this.getWorldScale()[2]));
         return compound;
     }
     return null;
 }
 phyAsset.prototype.buildCollisionShapeInner = function() {
     if (this.colType == PLANE)
-        return new Ammo.btBoxShape(new Ammo.btVector3(this.length, this.width, .001));
+        return new Ammo.btBoxShape(new Ammo.btVector3(this.length * this.getWorldScale()[0], this.width * this.getWorldScale()[1], .001));
     if (this.colType == CONE)
-        return new Ammo.btConeShapeZ(this.radius, this.height);
+        return new Ammo.btConeShapeZ(this.radius * this.getWorldScale()[0], this.height * this.getWorldScale()[1]);
     if (this.colType == CYLINDER)
-        return new Ammo.btCylinderShapeZ(new Ammo.btVector3(this.radius, this.height, this.height));
+        return new Ammo.btCylinderShapeZ(new Ammo.btVector3(this.radius * this.getWorldScale()[0], this.height * this.getWorldScale()[1], this.height * this.getWorldScale()[1]));
     if (this.colType == SPHERE)
-        return new Ammo.btSphereShape(this.radius);
+        return new Ammo.btSphereShape(this.radius * this.getWorldScale()[0]);
     if (this.colType == BOX)
-        return new Ammo.btBoxShape(new Ammo.btVector3(this.length, this.width, this.height));
+        return new Ammo.btBoxShape(new Ammo.btVector3(this.length * this.getWorldScale()[0], this.width * this.getWorldScale()[1], this.height * this.getWorldScale()[2]));
     if (this.colType == MESH) {
         return this.buildMeshCollision();
         //here be dragons
@@ -894,7 +1171,13 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
                 return this.childTransforms.length;
             }
         },
+        testConstraint: function(id,id1,id2)
+        {
+            this.allNodes[id] = new phyPointToPointJoint(id,this.allNodes[vwf.application()].world,this);
+            this.allNodes[id].setBodyAID(id1);
+            this.allNodes[id].setBodyBID(id2);
 
+        },
         // == Model API ============================================================================
 
         // -- creatingNode -------------------------------------------------------------------------
@@ -902,55 +1185,22 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
         creatingNode: function(nodeID, childID, childExtendsID, childImplementsIDs, childSource, childType, childIndex, childName, callback /* ( ready ) */ ) {
             if (childID === vwf.application()) {
 
-                var collisionConfiguration = new Ammo.btDefaultCollisionConfiguration(); // every single |new| currently leaks...
-                var dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
-                var overlappingPairCache = new Ammo.btDbvtBroadphase();
-                var solver = new Ammo.btSequentialImpulseConstraintSolver();
 
-                var dynamicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-                dynamicsWorld.setGravity(new Ammo.btVector3(0, 0, -9.8));
-
-
-                var groundShape = new Ammo.btBoxShape(new Ammo.btVector3(500, 500, .1));
-
-
-
-                var groundTransform = new Ammo.btTransform();
-                groundTransform.setIdentity();
-                groundTransform.setOrigin(new Ammo.btVector3(0, 0, 0));
-
-                var mass = 0;
-                var isDynamic = mass !== 0;
-                var localInertia = new Ammo.btVector3(0, 0, 0);
-
-
-
-                if (isDynamic)
-                    groundShape.calculateLocalInertia(mass, localInertia);
-
-                var myMotionState = new Ammo.btDefaultMotionState(groundTransform);
-                var rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, myMotionState, groundShape, localInertia);
-                var body = new Ammo.btRigidBody(rbInfo);
-                this.bodiesToID[body.ptr] = childID;
-                body.setRestitution(1);
-                body.setFriction(.3);
-
-
-                dynamicsWorld.addRigidBody(body);
 
                 this.nodes[vwf.application()] = {
-                    world: dynamicsWorld,
+                    world: null,
                     type: SCENE,
                     initialized: false,
                     children: {},
                     id: childID,
                     simulationSteps: 10,
                     active: true,
-                    ground: body
+                    ground: null,
+                    localScale: [1, 1, 1]
                 }
 
                 this.allNodes[vwf.application()] = this.nodes[vwf.application()];
-
+                this.resetWorld();
             }
 
             //node ID 
@@ -973,8 +1223,8 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
                 this.allNodes[nodeID].children[childID] = new phyPlane(childID, this.allNodes[vwf.application()].world);
             }
 
-            
-            if (nodeID && (hasPrototype(childID, 'asset-vwf')||hasPrototype(childID, 'sandboxGroup-vwf'))) {
+
+            if (nodeID && (hasPrototype(childID, 'asset-vwf') || hasPrototype(childID, 'sandboxGroup-vwf'))) {
                 this.allNodes[nodeID].children[childID] = new phyAsset(childID, this.allNodes[vwf.application()].world);
             }
             //child was created
@@ -990,7 +1240,7 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
             }
 
         },
-
+        oldCollisions:{},
         triggerCollisions: function() {
             var i, offset,
                 dp = this.nodes[vwf.application()].world.getDispatcher(),
@@ -998,7 +1248,7 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
                 manifold, num_contacts, j, pt,
                 _collided = false;
 
-
+                var newCollisions = {}
 
             for (i = 0; i < num; i++) {
                 manifold = dp.getManifoldByIndexInternal(i);
@@ -1028,12 +1278,23 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
                         collisionPointB: collisionPointB,
                         collisionNormal: collisionNormal
                     };
-                    vwf.callMethod(vwfIDA, 'collision', [vwfIDB, collision]);
-                    vwf.callMethod(vwfIDB, 'collision', [vwfIDA, collision]);
+                    
+                    if(!this.oldCollisions[vwfIDA] || this.oldCollisions[vwfIDA].indexOf(vwfIDB) === -1)
+                        vwf.callMethod(vwfIDA, 'collision', [vwfIDB, collision]);
+                    if(!this.oldCollisions[vwfIDB] || this.oldCollisions[vwfIDB].indexOf(vwfIDA) === -1)
+                        vwf.callMethod(vwfIDB, 'collision', [vwfIDA, collision]);
+
+
+                    if(!newCollisions[vwfIDA]) newCollisions[vwfIDA] = [];
+                    if(!newCollisions[vwfIDB]) newCollisions[vwfIDB] = [];
+
+                    newCollisions[vwfIDA].push(vwfIDB);
+                    newCollisions[vwfIDB].push(vwfIDA);
+
                     break;
                 }
             }
-
+            this.oldCollisions = newCollisions;
 
 
         },
@@ -1042,12 +1303,23 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
 
                 for (var i in this.allNodes) {
                     var node = this.allNodes[i];
-                    if (node && node.update)
+                    if (node && node.update) {
                         node.update();
+
+
+                        for (var i in node.delayedProperties) {
+                            this.settingProperty(node.id, i, node.delayedProperties[i]);
+                        }
+                        delete node.delayedProperties;
+                        if (node.body)
+                            this.bodiesToID[node.body.ptr] = node.id;
+
+                    }
+
                 }
                 //step 50ms per tick.
                 //this is dictated by the input from the reflector
-                this.nodes[vwf.application()].world.stepSimulation(1 / 20, 0, this.nodes[vwf.application()].simulationSteps);
+                this.nodes[vwf.application()].world.stepSimulation(1 / 20, 1, 1 / 20);
                 this.reEntry = true;
                 var tempmat = [];
                 for (var i in this.allNodes) {
@@ -1057,10 +1329,10 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
                         vwf.setProperty(node.id, 'transform', node.getTransform(tempmat));
                         //so, we were setting these here in order to inform the kernel that the property changed. Can we not do this, and 
                         //rely on the getter? that would be great....
-                    //    vwf.setProperty(node.id, '___physics_activation_state', node.getActivationState());
-                    //    vwf.setProperty(node.id, '___physics_velocity_angular', node.getAngularVelocity());
-                    //    vwf.setProperty(node.id, '___physics_velocity_linear', node.getLinearVelocity());
-                    //    vwf.setProperty(node.id, '___physics_deactivation_time', node.getDeactivationTime());
+                        vwf.setProperty(node.id, '___physics_activation_state', node.getActivationState());
+                        vwf.setProperty(node.id, '___physics_velocity_angular', node.getAngularVelocity());
+                        vwf.setProperty(node.id, '___physics_velocity_linear', node.getLinearVelocity());
+                        vwf.setProperty(node.id, '___physics_deactivation_time', node.getDeactivationTime());
 
                     }
                 }
@@ -1105,8 +1377,7 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
             }
         },
 
-        
-        
+
 
         // -- creatingProperty ---------------------------------------------------------------------
 
@@ -1124,16 +1395,31 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
             //initializing the world in a given state. There is stateful information internal to the physics engine that can only be reset on the other clients
             //by rebuilding the whole sim on each.
             var world = this.allNodes[vwf.application()].world;
-            for (var i in this.allNodes) {
-                var node = this.allNodes[i];
-                if (node.body) {
-                    world.removeRigidBody(node.body);
-                }
-            }
-            world.removeRigidBody(this.allNodes[vwf.application()].ground);
-            delete this.allNodes[vwf.application()].world;
 
-            Ammo.destroy(world);
+            if (world) {
+                for (var i in this.allNodes) {
+                    var node = this.allNodes[i];
+                    if (node.body) {
+                        //call the getters, because they will cache the values to survive the reset
+                        var backupTrans = node.getTransform();
+                        var backupVel = node.getLinearVelocity();
+                        var backupAng = node.getAngularVelocity();
+                        var state = node.getActivationState();
+                        var time = node.getDeactivationTime();
+                        world.removeRigidBody(node.body);
+                    }
+                }
+                world.removeRigidBody(this.allNodes[vwf.application()].ground);
+                for (var i in this.allNodes) {
+                    var node = this.allNodes[i];
+                    if (this.allNodes[i].deinitialize)
+                        this.allNodes[i].deinitialize()
+                }
+                delete this.allNodes[vwf.application()].world;
+
+
+                Ammo.destroy(world);
+            }
 
             var collisionConfiguration = new Ammo.btDefaultCollisionConfiguration(); // every single |new| currently leaks...
             var dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
@@ -1146,29 +1432,43 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
             this.allNodes[vwf.application()].world = dynamicsWorld;
             world = dynamicsWorld;
 
+
+            var groundShape = new Ammo.btBoxShape(new Ammo.btVector3(500, 500, .1));
+            var groundTransform = new Ammo.btTransform();
+            groundTransform.setIdentity();
+            groundTransform.setOrigin(new Ammo.btVector3(0, 0, 0));
+            var mass = 0;
+            var isDynamic = mass !== 0;
+            var localInertia = new Ammo.btVector3(0, 0, 0);
+            var myMotionState = new Ammo.btDefaultMotionState(groundTransform);
+            var rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, myMotionState, groundShape, localInertia);
+            var body = new Ammo.btRigidBody(rbInfo);
+
+            body.setDamping(1, 1);
+            body.setFriction(.1);
+            body.setRestitution(.4);
+
+            this.allNodes[vwf.application()].ground = body;
+            world.addRigidBody(this.allNodes[vwf.application()].ground);
             //we need to see if adding the node back to the world is enough, or if we really have to kill and rebuild
             //research seems to indicate that you could just recreate the world but not all the bodies
             //but that did not work here, it needs to delay to next tick.
             for (var i in this.allNodes) {
                 var node = this.allNodes[i];
                 if (node.world) {
+
                     node.world = world;
                     node.initialized = false;
                     node.ready = false;
-                    //call the getters, because they will cache the values to survive the reset
+
                     if (i != vwf.application() && node.body) {
-                        var backupTrans = node.getTransform();
-                        var backupVel = node.getLinearVelocity();
-                        var backupAng = node.getAngularVelocity();
-                        var state = node.getActivationState();
-                        var time = node.getDeactivationTime();
+
                     }
                 }
             }
 
             //this.reinit();
 
-            world.addRigidBody(this.allNodes[vwf.application()].ground);
 
 
         },
@@ -1182,6 +1482,7 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
 
             var node = this.allNodes[nodeID];
             if (methodName === '___physics_addForce') {
+
                 node.addForce(args[0]);
             }
             if (methodName === '___physics_addTorque') {
@@ -1199,26 +1500,7 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
                 }
             }
         },
-        reinit: function() {
 
-            for (var i in this.allNodes) {
-                var node = this.allNodes[i];
-                if (!node.body) continue;
-
-                var backupTrans = node.getTransform();
-                var backupVel = node.getLinearVelocity();
-                var backupAng = node.getAngularVelocity();
-                var state = node.getActivationState();
-                var time = node.getDeactivationTime();
-                node.deinitialize();
-                node.initialize();
-                node.setTransform(backupTrans);
-                node.setLinearVelocity(backupVel);
-                node.setAngularVelocity(backupAng);
-                node.setActivationState(state);
-                node.setDeactivationTime(time);
-            }
-        },
         settingProperty: function(nodeID, propertyName, propertyValue) {
 
 
@@ -1239,7 +1521,9 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
                     delete this.bodiesToID[node.body.ptr];
 
                 if (propertyName === '___physics_gravity' && node.id === vwf.application()) {
-                    node.world.setGravity(new Ammo.btVector3(propertyValue[0], propertyValue[1], propertyValue[2]));
+                    var g = new Ammo.btVector3(propertyValue[0], propertyValue[1], propertyValue[2]);
+                    node.world.setGravity(g);
+                    Ammo.destroy(g);
                 }
                 if (propertyName === '___physics_active' && node.id === vwf.application()) {
                     node.active = propertyValue;
@@ -1341,6 +1625,12 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
                 if (propertyName === '___physics_factor_linear') {
                     node.setLinearFactor(propertyValue);
                 }
+                if (propertyName === '___physics_constant_force') {
+                    node.setConstantForce(propertyValue);
+                }
+                if (propertyName === '___physics_constant_torque') {
+                    node.setConstantTorque(propertyValue);
+                }
                 //this is a hack
                 //find a better way. Maybe delete the old key from the map above
                 if (node.body)
@@ -1377,7 +1667,7 @@ define(["module", "vwf/model", "vwf/configuration"], function(module, model, con
                 return node.getAngularVelocity();
             }
 
-          
+
 
         },
     });

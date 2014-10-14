@@ -945,7 +945,11 @@ define(function() {
         this.scaleChanged = function() {
             this.setTransform();
         }
-        this.NodePropertyUpdate = function(nodeID, propName, propVal) {
+        this.initializedProperty = function (nodeID, propName, propVal)
+        {
+            this.satProperty(nodeID, propName, propVal);
+        }
+        this.satProperty = function(nodeID, propName, propVal) {
 
 
             for (var i = 0; i < this.propertyEditorDialogs.length; i++) {
@@ -995,9 +999,13 @@ define(function() {
                     $('#RotationZ').val(Math.round(angles[2] * 57.2957795));
 
                     //$('#RotationW').val(rot[3]);
-                    $('#ScaleX').val(Math.floor(scl[0] * 1000) / 1000);
-                    $('#ScaleY').val(Math.floor(scl[1] * 1000) / 1000);
-                    $('#ScaleZ').val(Math.floor(scl[2] * 1000) / 1000);
+                    //well, this is embarassing. Old code from years ago, reflecting incorrect idea about how 
+                    //transform matrix works
+              
+                    $('#ScaleX').val((Math.floor(MATH.lengthVec3([mat[0],mat[1],mat[2]]) * 1000)) / 1000);
+                    $('#ScaleY').val((Math.floor(MATH.lengthVec3([mat[4],mat[5],mat[6]]) * 1000)) / 1000);
+                    $('#ScaleZ').val((Math.floor(MATH.lengthVec3([mat[8],mat[9],mat[10]]) * 1000)) / 1000);
+
                 }
             } catch (e) {
                 //console.log(e);
@@ -1006,7 +1014,7 @@ define(function() {
         $(document).bind('selectionChanged', this.SelectionChanged.bind(this));
         $(document).bind('modifierCreated', this.SelectionChanged.bind(this));
         $(document).bind('selectionTransformedLocal', this.SelectionTransformed.bind(this));
-        $(document).bind('nodePropChanged', this.NodePropertyUpdate.bind(this));
+       
         $('#PositionX').change(this.positionChanged.bind(this));
         $('#PositionY').change(this.positionChanged.bind(this));
         $('#PositionZ').change(this.positionChanged.bind(this));

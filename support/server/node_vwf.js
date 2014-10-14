@@ -303,11 +303,12 @@ function startVWF() {
                 //find pretty world URL's, and redirect to the non-pretty url for the world
                 app.use(ServerFeatures.prettyWorldURL);
 
+                app.use(express.limit('500mb'));
                 app.use(express.methodOverride());
 
                 //Wait until all data is loaded before continuing
                 //app.use (ServerFeatures.waitForAllBody);
-                app.use(express.bodyParser());
+                app.use(express.bodyParser( {maxFieldsSize:2 * 1024 * 1024 * 1024 }));
                 //CORS support
                 app.use(ServerFeatures.CORSSupport);
 
@@ -544,7 +545,7 @@ passport.serializeUser(function(user, done) {
             done(null,null)
             return;;
         }
-        xapi.sendStatement(user.id, xapi.verbs.logged_in);
+        
         var userStorage = require('./sessions.js').createSession();
         userStorage.id = user.id;
         userStorage.UID = user.id;
@@ -592,13 +593,16 @@ if (global.configuration.facebook_app_id) {
         function(accessToken, refreshToken, profile, done) {
             process.nextTick(function() {
                 profile.id = "facebook_" + profile.id;
+
                 DAL.getUser(profile.id, function(user) {
                     if (user) {
+                        xapi.sendStatement(user.Username, xapi.verbs.logged_in);    
                         done(null, user);
                     } else {
                         user = DAL.createProfileFromFacebook(profile, function(results) {
                             if (results === "ok") {
                                 DAL.getUser(profile.id, function(user) {
+                                    xapi.sendStatement(user.Username, xapi.verbs.logged_in);    
                                     done(null, user);
                                 });
                             } else {
@@ -622,11 +626,13 @@ if (global.configuration.twitter_consumer_key) {
                 profile.id = "twitter_" + profile.id;
                 DAL.getUser(profile.id, function(user) {
                     if (user) {
+                        xapi.sendStatement(user.Username, xapi.verbs.logged_in);    
                         done(null, user);
                     } else {
                         user = DAL.createProfileFromTwitter(profile, function(results) {
                             if (results === "ok") {
                                 DAL.getUser(profile.id, function(user) {
+                                    xapi.sendStatement(user.Username, xapi.verbs.logged_in);    
                                     done(null, user);
                                 });
                             } else {
@@ -652,11 +658,13 @@ if (global.configuration.google_client_id) {
                 profile.id = "google_" + profile.id;
                 DAL.getUser(profile.id, function(user) {
                     if (user) {
+                        xapi.sendStatement(user.Username, xapi.verbs.logged_in);    
                         done(null, user);
                     } else {
                         user = DAL.createProfileFromGoogle(profile, function(results) {
                             if (results === "ok") {
                                 DAL.getUser(profile.id, function(user) {
+                                    xapi.sendStatement(user.Username, xapi.verbs.logged_in);    
                                     done(null, user);
                                     return;
                                 });

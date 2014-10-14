@@ -12,28 +12,121 @@
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing permissions and limitations under
 // the License.
-function matset(newv,old)
-{
-    if(!old)
-    {
+function matset(newv, old) {
+    if (!old) {
         newv = old;
         return;
     }
-    if(!newv)
-        newv =[];
-    for(var i =0; i < old.length; i++)
+    if (!newv)
+        newv = [];
+    for (var i = 0; i < old.length; i++)
         newv[i] = old[i];
     return newv;
 }
-define(["module", "vwf/view"], function(module, view) {
+
+function RunPrefixMethod(obj, method, param) {
+            var p = 0,
+                m, t;
+            while (p < pfx.length && !obj[m]) {
+                m = method;
+                if (pfx[p] == "") {
+                    m = m.substr(0, 1).toLowerCase() + m.substr(1);
+                }
+                m = pfx[p] + m;
+                t = typeof obj[m];
+                if (t != "undefined") {
+                    pfx = [pfx[p]];
+                    return (t == "function" ? obj[m](param) : obj[m]);
+                }
+                p++;
+            }
+        }
+var pfx = ["webkit", "moz", "ms", "o", ""];
+
+define(["module", "vwf/view", "vwf/model/threejs/OculusRiftEffect","vwf/model/threejs/VRRenderer"], function(module, view) {
     var stats;
     var NORMALRENDER = 0;
     var STEREORENDER = 1;
+    var VRRENDER = 2;
+    var everyOtherFrame = false;
     return view.load(module, {
 
         renderMode: NORMALRENDER,
+        effects: [],
+        topCamera:new THREE.OrthographicCamera(1,-1,1,-1,0,10000),
+        leftCamera:new THREE.OrthographicCamera(1,-1,1,-1,0,10000),
+        frontCamera:new THREE.OrthographicCamera(1,-1,1,-1,0,10000),
+        vrHMDSensor: null,
+        vrHMD:null,
+        vrRenderer: null,
+        toggleFullScreen:function()
+        {
+        
+            if (RunPrefixMethod(document, "FullScreen") || RunPrefixMethod(document, "IsFullScreen")) {
+                RunPrefixMethod(document, "CancelFullScreen");
+            } else {
+                if (this.vrHMD && this.renderMode == VRRENDER) {
+                    //RunPrefixMethod($('#index-vwf')[0], "RequestFullScreen", {
+                    //    vrDisplay: this.vrHMD
+                    //});
+                    var canvas = $('#index-vwf')[0];
+                    canvas.webkitRequestFullscreen({
+                        vrDisplay: this.vrHMD
+                    });
+                }
+                else
+                     RunPrefixMethod(document.body, "RequestFullScreen", 1);
+            }
+        },
+        initHMD: function() {
+
+            function vrDeviceCallback(vrdevs) {
+                
+                for (var i = 0; i < vrdevs.length; ++i) {
+                    if (vrdevs[i] instanceof HMDVRDevice) {
+                        _dView.vrHMD = vrdevs[i];
+                        break;
+                    }
+                }
+                for (var i = 0; i < vrdevs.length; ++i) {
+                    if (vrdevs[i] instanceof PositionSensorVRDevice &&
+                        vrdevs[i].hardwareUnitId == _dView.vrHMD.hardwareUnitId) {
+                        _dView.vrHMDSensor = vrdevs[i];
+                        
+                        alertify.log('WebVR compatable HMD detected');
+                        break;
+                    }
+                }
+                alertify.log('No WebVR HMD available');
+            }
+
+            if (navigator.getVRDevices) {
+                navigator.getVRDevices().then(vrDeviceCallback);
+            } else if (navigator.mozGetVRDevices) {
+                navigator.mozGetVRDevices(vrDeviceCallback);
+            }else
+            {
+                alertify.log('WebVR not supported');
+            }
+
+        },
+        addEffect: function(effect) {
+            this.effects.push(effect);
+        },
+        removeEffect: function(effect) {
+            this.effects.splice(this.effects.indexOf(effect), 1);
+        },
+        activateRiftEffect: function() {
+            var effect = new THREE.OculusRiftEffect(_dRenderer, {
+                worldScale: 1
+            });
+            effect.setSize(parseInt($("#index-vwf").css('width')), parseInt($("#index-vwf").css('height')));
+            this.addEffect(effect);
+            vwf.callMethod(vwf.application(),'activteOculusBridge')
+        },
         initialize: function(rootSelector) {
 
+            this.initHMD();
             rootSelector = {
                 "application-root": '#vwf-root'
             };
@@ -110,11 +203,9 @@ define(["module", "vwf/view"], function(module, view) {
             n[10] = z[2];
             return n;
         },
-        matrixLerp: function(a, b, l,n) {
-            if(!n) n = a.slice(0);
-            n[12] = this.lerp(a[12], b[12], l);
-            n[13] = this.lerp(a[13], b[13], l);
-            n[14] = this.lerp(a[14], b[14], l);
+        matrixLerp: function(a, b, l, n) {
+            if (!n) n = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+
 
             var x = [a[0], a[1], a[2]];
             var xl = Vec3.magnitude(x);
@@ -169,6 +260,10 @@ define(["module", "vwf/view"], function(module, view) {
             nqm[13] = n[13];
             nqm[14] = n[14];
 
+            nqm[12] = this.lerp(a[12], b[12], l);
+            nqm[13] = this.lerp(a[13], b[13], l);
+            nqm[14] = this.lerp(a[14], b[14], l);
+
             return nqm;
         },
 
@@ -201,17 +296,25 @@ define(["module", "vwf/view"], function(module, view) {
                     var i = keys[j];
                     //don't do interpolation for static objects
                     if (this.nodes[i].isStatic) continue;
-
+                    if (!this.neededTransfromInterp[i]) {
+                            this.nodes[i].lastTickTransform = null;
+                            continue;
+                        }
                     if (this.state.nodes[i] && this.state.nodes[i].gettingProperty) {
-                        this.nodes[i].lastTickTransform = matset(this.nodes[i].lastTickTransform,this.nodes[i].thisTickTransform);
-                        this.nodes[i].thisTickTransform = matset(this.nodes[i].thisTickTransform,this.state.nodes[i].gettingProperty('transform'));
-                       
+                        this.nodes[i].lastTickTransform = matset(this.nodes[i].lastTickTransform, this.nodes[i].thisTickTransform);
+                        this.nodes[i].thisTickTransform = matset(this.nodes[i].thisTickTransform, this.state.nodes[i].gettingProperty('transform'));
+
 
                         this.nodes[i].lastAnimationFrame = this.nodes[i].thisAnimationFrame;
                         this.nodes[i].thisAnimationFrame = this.state.nodes[i].gettingProperty('animationFrame');
 
                     }
                 }
+                everyOtherFrame = !everyOtherFrame;
+                if (everyOtherFrame) {
+                    this.neededTransfromInterp = {};
+                }
+                    
             }
             if (hit > 1) {
                 this.tickTime = 0;
@@ -235,8 +338,8 @@ define(["module", "vwf/view"], function(module, view) {
 
             if (this.gizmoThisTickTransform && this.gizmoLastTickTransform) {
                 this.currentGizmoTransform = _Editor.GetMoveGizmo().parent.matrix.clone();
-                var interp = this.matrixLerp(matCpy(this.gizmoLastTickTransform.elements), matCpy(this.gizmoThisTickTransform.elements), step);
-                _Editor.GetMoveGizmo().parent.matrix.fromArray(interp);
+                var interpG = this.matrixLerp(matCpy(this.gizmoLastTickTransform.elements), matCpy(this.gizmoThisTickTransform.elements), step);
+                _Editor.GetMoveGizmo().parent.matrix.fromArray(interpG);
                 _Editor.GetMoveGizmo().parent.updateMatrixWorld(true);
             }
 
@@ -250,12 +353,12 @@ define(["module", "vwf/view"], function(module, view) {
 
                 var last = this.nodes[i].lastTickTransform;
                 var now = this.nodes[i].thisTickTransform;
-                if (last && now) {
+                if (last && now ) {
 
-                    interp = matset(interp,last);
-                    interp = this.matrixLerp(last, now, step,interp);
+                    interp = matset(interp, last);
+                    interp = this.matrixLerp(last, now, step, interp);
 
-                    this.nodes[i].currentTickTransform = matset(this.nodes[i].currentTickTransform,this.state.nodes[i].gettingProperty('transform'));
+                    this.nodes[i].currentTickTransform = matset(this.nodes[i].currentTickTransform, this.state.nodes[i].gettingProperty('transform'));
                     if (this.state.nodes[i].setTransformInternal)
                         this.state.nodes[i].setTransformInternal(interp, false);
 
@@ -265,18 +368,18 @@ define(["module", "vwf/view"], function(module, view) {
 
                 last = this.nodes[i].lastAnimationFrame;
                 now = this.nodes[i].thisAnimationFrame;
-                if (last && now && Math.abs(now - last) < 3) {
+                if (last && now && Math.abs(now - last) < 3 ) {
 
-                    var interp = 0;
+                    var interpA = 0;
 
 
-                    interp = this.lerp(last, now, step);
+                    interpA = this.lerp(last, now, step);
 
 
 
                     this.nodes[i].currentAnimationFrame = this.state.nodes[i].gettingProperty('animationFrame');
                     if (this.state.nodes[i].setAnimationFrameInternal)
-                        this.state.nodes[i].setAnimationFrameInternal(interp, false);
+                        this.state.nodes[i].setAnimationFrameInternal(interpA, false);
 
 
                 }
@@ -287,14 +390,16 @@ define(["module", "vwf/view"], function(module, view) {
 
 
         },
+        windowResized: function() {
+            //called on window resize by windowresize.js
+            for (var i = 0; i < this.effects.length; i++) {
+                this.effects[i].setSize(parseInt($("#index-vwf").css('width')), parseInt($("#index-vwf").css('height')));
+            }
+        },
         triggerWindowResize: function() {
-
             //overcome by code in WindowResize.js
             $(window).resize();
             return;
-
-
-
         },
         restoreTransforms: function() {
 
@@ -331,6 +436,13 @@ define(["module", "vwf/view"], function(module, view) {
         setRenderModeStereo: function() {
             this.renderMode = STEREORENDER;
             this.triggerWindowResize();
+        },
+        setRenderModeVR: function() {
+            this.renderMode = VRRENDER;
+            hideTools();
+            this.toggleFullScreen();
+            vwf.callMethod(vwf.application(),'activteOculusBridge');
+            //this.triggerWindowResize();
         },
         setRenderModeNormal: function() {
             this.renderMode = NORMALRENDER;
@@ -474,6 +586,8 @@ define(["module", "vwf/view"], function(module, view) {
 
             var cam = this.state.scenes['index-vwf'].camera.threeJScameras[this.state.scenes['index-vwf'].camera.ID];
 
+            if(camID === 'top')
+                cam = this.topCamera;
             if (this.cameraID) {
                 clearCameraModeIcons();
                 cam = null;
@@ -482,6 +596,12 @@ define(["module", "vwf/view"], function(module, view) {
                         cam = this.state.nodes[this.cameraID].getRoot();
                     }
             }
+            if(camID === 'top')
+                cam = this.topCamera;
+            if(camID === 'left')
+                cam = this.leftCamera;
+            if(camID === 'front')
+                cam = this.frontCamera;
 
             if (cam) {
                 var aspect = $('#index-vwf').width() / $('#index-vwf').height();
@@ -500,6 +620,7 @@ define(["module", "vwf/view"], function(module, view) {
         createdProperty: function(nodeID, propertyName, propertyValue) {
             this.satProperty(nodeID, propertyName, propertyValue);
         },
+        neededTransfromInterp:{},
         satProperty: function(nodeID, propertyName, propertyValue) {
 
             //console.log([nodeID,propertyName,propertyValue]);
@@ -515,7 +636,8 @@ define(["module", "vwf/view"], function(module, view) {
             if (this.nodes[nodeID])
                 this.nodes[nodeID].properties[propertyName] = propertyValue;
 
-
+            if(propertyName == 'transform')
+                this.neededTransfromInterp[nodeID] = true;
 
             node[propertyName] = propertyValue;
 
@@ -814,7 +936,7 @@ define(["module", "vwf/view"], function(module, view) {
         function GetParticleSystems(node, list) {
 
             for (var i = 0; i < node.children.length; i++) {
-                if (node.children[i] instanceof THREE.ParticleSystem) {
+                if (node.children[i] instanceof THREE.PointCloud) {
                     if (!list)
                         list = [];
                     list.push(node.children[i]);
@@ -859,6 +981,11 @@ define(["module", "vwf/view"], function(module, view) {
 
             requestAnimFrame(renderScene);
 
+            //lets not render when the quere is not ready. This prevents rendering of meshes that must have their children
+            //loaded before they can render
+            if (!vwf.private.queue.ready() || !window._dRenderer) {
+                return;
+            }
             //so, here's what we'll do. Since the sim state cannot advance until tick, we will update on tick. 
             //but, ticks aren't fired when the scene in paused. In that case, we'll do it every frame.
             var currentState = vwf.getProperty(vwf.application(), 'playMode');
@@ -1015,16 +1142,43 @@ define(["module", "vwf/view"], function(module, view) {
             //cam.far = far;
             //cam.updateProjectionMatrix();
 
+            //only render effects in normal mode. Should our older stereo support move into a THREE.js effect?
             if (self.renderMode === NORMALRENDER) {
-                cam.setViewOffset(undefined);
+                if(cam.setViewOffset)
+                    cam.setViewOffset(undefined);
                 cam.updateProjectionMatrix();
-                renderer.render(scene, cam);
+                //if there are no effects, we can do a normal render
+                if (self.effects.length == 0)
+                    renderer.render(scene, cam);
+                else //else, the normal render is taken care of by the effect
+                {
+                    for (var i = 0; i < self.effects.length; i++) {
+                        self.effects[i].render(scene, cam);
+                    }
+                }
+            }else if(self.renderMode == VRRENDER)
+            {
+
+                if (cam.setViewOffset)
+                    cam.setViewOffset(undefined);
+                cam.updateProjectionMatrix();
+                //if there are no effects, we can do a normal render
+                if (self.effects.length == 0)
+                    self.vrRenderer.render(scene, cam);
+                else //else, the normal render is taken care of by the effect
+                {
+                    for (var i = 0; i < self.effects.length; i++) {
+                        self.effects[i].render(scene, cam);
+                    }
+                }
+
+
             } else if (self.renderMode === STEREORENDER) {
                 var width = $('#index-vwf').attr('width');
                 var height = $('#index-vwf').attr('height');
-                var ww2 = width / 2;
+                var ww2 = width / (2 * _dRenderer.devicePixelRatio);
                 var h = ww2 / 1.333;
-                var hdif = (height - h) / 2;
+                var hdif = (height - h) / (2 * _dRenderer.devicePixelRatio * _dRenderer.devicePixelRatio * _dRenderer.devicePixelRatio);
                 var centerh = hdif;
 
                 oldaspect = cam.aspect;
@@ -1044,10 +1198,13 @@ define(["module", "vwf/view"], function(module, view) {
 
                 renderer.setViewport(0, centerh, ww2, h);
                 _dRenderer.setScissor(0, centerh, ww2, h);
-                cam.setViewOffset(ww2, h, -100, 0, ww2, h);
+                
+                if(cam.setViewOffset)
+                    cam.setViewOffset(ww2, h, -100, 0, ww2, h);
                 cam.updateProjectionMatrix();
 
-                cam.setViewOffset(ww2, h, -_SettingsManager.getKey('stereoOffset') * ww2, 0, ww2, h);
+                if(cam.setViewOffset)
+                    cam.setViewOffset(ww2, h, -_SettingsManager.getKey('stereoOffset') * ww2, 0, ww2, h);
                 cam.updateProjectionMatrix();
                 renderer.render(scene, cam);
 
@@ -1059,7 +1216,8 @@ define(["module", "vwf/view"], function(module, view) {
                 renderer.setViewport(ww2, centerh, ww2, h);
                 _dRenderer.setScissor(ww2, centerh, ww2, h);
 
-                cam.setViewOffset(ww2, h, _SettingsManager.getKey('stereoOffset') * ww2, 0, ww2, h);
+                if(cam.setViewOffset)
+                    cam.setViewOffset(ww2, h, _SettingsManager.getKey('stereoOffset') * ww2, 0, ww2, h);
                 cam.updateProjectionMatrix();
 
                 renderer.render(scene, cam);
@@ -1214,7 +1372,7 @@ define(["module", "vwf/view"], function(module, view) {
             var hovering = false;
             var view = this;
 
-
+            if (!$.parseQuerystring().norender) {
             if (detectWebGL() && getURLParameter('disableWebGL') == 'null') {
 
                 sceneNode.renderer = new THREE.WebGLRenderer({
@@ -1225,6 +1383,7 @@ define(["module", "vwf/view"], function(module, view) {
                 });
                 sceneNode.renderer.autoUpdateScene = false;
                 sceneNode.renderer.setSize($('#index-vwf').width(), $('#index-vwf').height());
+
 
 
                 if (_SettingsManager.getKey('shadows')) {
@@ -1246,11 +1405,13 @@ define(["module", "vwf/view"], function(module, view) {
                 });
                 sceneNode.renderer.setSize(window.innerWidth, window.innerHeight);
             }
+                if (sceneNode.renderer.setFaceCulling)
+                    sceneNode.renderer.setFaceCulling(false);
+            }
 
 
             rebuildAllMaterials.call(this);
-            if (sceneNode.renderer.setFaceCulling)
-                sceneNode.renderer.setFaceCulling(false);
+
             this.state.cameraInUse = sceneNode.camera.threeJScameras[sceneNode.camera.ID];
 
 
@@ -1262,6 +1423,9 @@ define(["module", "vwf/view"], function(module, view) {
             var backgroundScene = new THREE.Scene();
 
             var renderer = sceneNode.renderer;
+            // by this point, the callback should be done. Create the renderer if the sensor was detected
+            if(_dView.vrHMDSensor)
+                _dView.vrRenderer = new THREE.VRRenderer(renderer, _dView.vrHMD);
             var scenenode = sceneNode;
             window._dScene = scene;
             window._dbackgroundScene = backgroundScene;

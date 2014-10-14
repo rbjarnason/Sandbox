@@ -146,8 +146,37 @@ define(function() {
                     }.bind(this)
                 });
             } else {
-                //this is a published world, and you do not need to hit the login server
-                this.Login('Anonymous' + _UserManager.getPlayers().length, 'Anonymous' + _UserManager.getPlayers().length);
+                //this is a published world, and you do not need to be logged in
+                $.ajax('/vwfDataManager.svc/logindata', {
+                    cache: false,
+                    async: false,
+                    success: function(data, status, xhr) {
+                        //however, if you are logged in, this manager needs to know your name
+                        //since the server knows your name via the session cookie, it will fire
+                        //a login event with the users name. 
+                        var logindata = JSON.parse(xhr.responseText);
+                        var username = logindata.username || logindata.user_uid || logindata.UID;
+                        var userID = logindata.user_uid || logindata.UID;
+
+
+                        //only the first client from a given login should create the avatart
+                        if (vwf.models[0].model.nodes['character-vwf-' + userID.replace(/ /g, '-')] == undefined)
+                            this.Login(username, userID);
+                        else {
+                            this.Login('Anonymous' + _UserManager.getPlayers().length, 'Anonymous' + _UserManager.getPlayers().length);
+                        }
+
+
+                    }.bind(this),
+                    error: function(xhr, status, err) {
+                        //in this case, the world allows anonymous users, and you really are anonymous, so log in as
+                        //anonymous;
+                        this.Login('Anonymous' + _UserManager.getPlayers().length, 'Anonymous' + _UserManager.getPlayers().length);
+                    }.bind(this)
+                });
+
+
+
             }
 
 
@@ -191,11 +220,15 @@ define(function() {
 
                 if ((statedata && statedata.publishSettings && !statedata.publishSettings.camera) || !statedata || !statedata.publishSettings) {
 
-                    _dView.setCameraDefault();
-                    clearCameraModeIcons();
-                    $('#MenuCamera3RDPersonicon').addClass('iconselected');
-                    vwf.models[0].model.nodes['index-vwf'].followObject(vwf.models[0].model.nodes[_UserManager.GetCurrentUserID()]);
-                    vwf.models[0].model.nodes['index-vwf'].setCameraMode('3RDPerson');
+                    //set cameramode to avatar if an avatar is created
+                    //but only if the world is playing
+                    if (vwf.getProperty(vwf.application(), 'playMode') === 'play') {
+                        _dView.setCameraDefault();
+                        clearCameraModeIcons();
+                        $('#MenuCamera3RDPersonicon').addClass('iconselected');
+                        vwf.models[0].model.nodes['index-vwf'].followObject(vwf.models[0].model.nodes[_UserManager.GetCurrentUserID()]);
+                        vwf.models[0].model.nodes['index-vwf'].setCameraMode('3RDPerson');
+                    }
                 }
 
 
@@ -275,6 +308,24 @@ define(function() {
                     ___physics_factor_angular: [0, 0, 0],
                     ___physics_enabled: true,
                     ___physics_mass: 100,
+                    transform: [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
                 },
                 events: {
                     ShowProfile: null,
@@ -462,7 +513,9 @@ define(function() {
             this.PlayerProto.properties.owner = userID;
             this.PlayerProto.properties.ownerClientID = vwf.moniker();
             this.PlayerProto.properties.profile = profile;
-            this.PlayerProto.properties.translation = newintersectxy;
+            this.PlayerProto.properties.transform[12] = newintersectxy[0];
+            this.PlayerProto.properties.transform[13] = newintersectxy[1];
+            this.PlayerProto.properties.transform[14] = newintersectxy[2];
             this.PlayerProto.properties.scale = [profile.avatarHeight || 1.0, profile.avatarHeight || 1.0, profile.avatarHeight || 1.0];
 
             vwf.models.javascript.nodes['index-vwf'].orbitPoint(newintersectxy);
@@ -641,12 +694,12 @@ define(function() {
         //$('#Players').dialog({ position:['left','bottom'],width:300,height:200,title: "Players",autoOpen:false});
 
 
+        //these three functions should be deprecated and replaced by the ClientAPI on the Scene object for access
+        //from within the model.
         this.GetPlayernameForClientID = function(id) {
-            for (var i in vwf.models[0].model.nodes) {
-                var node = vwf.models[0].model.nodes[i];
-                if (node.ownerClientID == id)
-                    return node.name;
-            }
+            var clients = vwf.getProperty(vwf.application(), 'clients')
+            if (clients && clients[id])
+                return clients[id].UID;
         }
         this.GetAvatarForClientID = function(id) {
             for (var i in vwf.models[0].model.nodes) {
@@ -656,10 +709,9 @@ define(function() {
             }
         }
         this.GetClientIDForPlayername = function(id) {
-            for (var i in vwf.models[0].model.nodes) {
-                var node = vwf.models[0].model.nodes[i];
-                if (node.PlayerNumber == id)
-                    return node.ownerClientID;
+            var clients = vwf.getProperty(vwf.application(), 'clients')
+            for (var i in clients) {
+                if (clients[i].UID == id) return clietns[i].cid;
             }
         }
 
