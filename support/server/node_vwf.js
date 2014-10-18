@@ -141,15 +141,9 @@ function startVWF() {
     reset = '\u001b[0m';
 
 
-
     //start the DAL, load configuration file
-    try {
-        configSettings = JSON.parse(fs.readFileSync('./config.json').toString());
-        SandboxAPI.setAnalytics(configSettings.analytics);
-    } catch (e) {
-        configSettings = {};
-
-    }
+    configSettings = JSON.parse(fs.readFileSync('./config.json').toString());
+    SandboxAPI.setAnalytics(configSettings.analytics);
 
     //save configuration into global scope so other modules can use.
     global.configuration = configSettings;
