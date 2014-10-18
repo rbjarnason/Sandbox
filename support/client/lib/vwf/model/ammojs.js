@@ -235,7 +235,7 @@ phyObject.prototype.addTorque = function(vec) {
     if (this.initialized === true) {
         var f = new Ammo.btVector3(vec[0], vec[1], vec[2]);
         this.body.applyTorque(f);
-        Ammo.destroy(f);
+        //Ammo.destroy(f);
 
     }
 }
@@ -694,7 +694,7 @@ phyObject.prototype.setTransform = function(matrix) {
     this.transform = matrix;
     //todo: the compound collision of the parent does not need to be rebuild, just transforms updated
     //need new flag for this instead of full rebuild
-    if (this.enabled === true && this.parent.id !== vwf.application() || MATH.distanceVec3(this.localScale, oldScale) > .0001) {
+    if (this.enabled === true  && MATH.distanceVec3(this.localScale, oldScale) > .0001) {
         this.markRootBodyCollisionDirty();
     }
     else if (this.initialized === true) {
