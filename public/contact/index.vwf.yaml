@@ -231,6 +231,7 @@ properties:
         - Bright
         - White
         - Black
+        - Laugardalur
       values:
         - cloudy_noon
         - early_morning
@@ -243,6 +244,7 @@ properties:
         - bright
         - white
         - black
+        - laugardalur
     skyColorBlend:  
       displayname: Sky Color Blend
       property: skyColorBlend
