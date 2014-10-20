@@ -233,7 +233,7 @@ define({
 					SendChatMessage();
 				}
 			},
-			autoOpen: true
+			autoOpen: false
 		});
 
 		window.SendChatMessage = SendChatMessage;
