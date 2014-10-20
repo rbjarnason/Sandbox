@@ -582,7 +582,8 @@ if (global.configuration.facebook_app_id) {
     passport.use(new FacebookStrategy({
             clientID: global.configuration.facebook_app_id,
             clientSecret: global.configuration.facebook_app_secret,
-            callbackURL: global.configuration.facebook_callback_url
+            callbackURL: global.configuration.facebook_callback_url,
+            profileFields: ['id', 'displayName', 'emails']
         },
         function(accessToken, refreshToken, profile, done) {
             process.nextTick(function() {
