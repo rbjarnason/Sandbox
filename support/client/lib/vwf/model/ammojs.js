@@ -309,7 +309,7 @@ phyObject.prototype.initialize = function() {
 
     this.ready = true;
     //currently, only objects which are children of the world can be bodies
-    if (this.enabled && this.parent.id == vwf.application() && this.initialized === false) {
+    if (false && this.enabled && this.parent.id == vwf.application() && this.initialized === false) {
         this.initialized = true;
         console.log('init', this.id);
         var childCollisions = collectChildCollisions(this);
