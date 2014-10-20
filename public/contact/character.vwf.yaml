@@ -28,9 +28,9 @@ properties:
   ___physics_velocity_angular: [ 0, 0, 0 ]
   ___physics_factor_linear: [ 0, 0, 0 ]
   ___physics_factor_angular: [ 0, 0, 0 ]
-  ___physics_enabled: true
+  ___physics_enabled: false
   ___physics_mass: 158.5
-  animationPaused: false
+  animationPaused: true
 methods:
   update:
   tick:
