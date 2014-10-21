@@ -55,12 +55,12 @@ methods:
     var player =  _UserManager.GetAvatarForClientID(this.client)
     var worldpos = this.transformAPI.getWorldPosition();
     var _offset = this.Offset.internal_val.slice();
-    console.log(_offset);
+    //console.log(_offset);
     _offset[0] = _offset[0]+=vwf.random(vwf.application()) * 8 - 5;
     _offset[2] = _offset[2]+=Math.floor((vwf.random(vwf.application()) * 2) + 0);
     console.log(_offset);
     var targetTransform = worldpos;
-    console.log(worldpos);
+    //console.log(worldpos);
     var targetTrandformI =[];
     console.log(_offset);
     _offset = Vec3.scale(_offset,this.strength,[]);
