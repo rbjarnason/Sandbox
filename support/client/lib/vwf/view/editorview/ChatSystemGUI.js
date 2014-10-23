@@ -219,8 +219,7 @@ define({
 			}
 			return true;
 		}
-		$('#ChatWindow').dialog(
-		{
+		$('#ChatWindow').dialog({
 			position: ['left', 'top'],
 			width: 300,
 			height: 400,

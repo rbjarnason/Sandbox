@@ -251,7 +251,6 @@ function InitializeEditor() {
 
     require("vwf/view/editorview/InputSetup").initialize();
     require("vwf/view/editorview/ChatSystemGUI").initialize();
-
     if (_EditorView.needTools()) {
         $('#sidepanel').css('height', $(window).height() - ($('#statusbar').height() + $('#toolbar').height() + $('#smoothmenu1').height()) + 'px')
         $('#sidepanel').jScrollPane();
@@ -259,6 +258,7 @@ function InitializeEditor() {
 
         require("vwf/view/editorview/Menubar").initialize();
         require("vwf/view/editorview/SideTabs").initialize();
+
         $(document.head).append('<script type="text/javascript" src="vwf/view/localization/translate.js"></script>');
         translateMenu();
         //default to select mode
