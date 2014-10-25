@@ -331,8 +331,8 @@ define(function() {
                 }
 
                 if (profile && $('#irc-placeholder').html()=="" && true) { // TODO: Add IRC to config
-                    var ircUserName = profile.Username.replace(/ /g, "_");
-                    var ircChannelName = "#"+statedata.title.replace(/ /g, "_");
+                    var ircUserName = require( "vwf/utility" ).removeDiacritics(profile.Username.replace(/ /g, "_")).substring(0,28);
+                    var ircChannelName = require( "vwf/utility" ).removeDiacritics("#"+statedata.title.replace(/ /g, "_"));
                     var iframeTxt = '<iframe src="https://irc.yrpri.org:7778/?nick='+ircUserName+'_?'+ircChannelName+'" style="border:0;position:absolute;bottom:0px;left:320px;width:70%;height:270px;"></iframe>';
                     $('#irc-placeholder').html(iframeTxt);
                 }
