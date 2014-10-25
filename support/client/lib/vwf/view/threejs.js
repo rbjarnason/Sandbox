@@ -106,7 +106,8 @@ define(["module", "vwf/view", "vwf/model/threejs/OculusRiftEffect", "vwf/model/t
                 navigator.mozGetVRDevices(vrDeviceCallback);
             }else
             {
-                alertify.log('WebVR not supported');
+                // Not many people who have this yet, so commenting out
+                //alertify.log('WebVR not supported');
             }
 
         },
