@@ -125,9 +125,9 @@ var handleRedirectAfterLogin = function(req, res) {
         redirectUrl = global.appPath + '/' + req.session.redirectUrl;
         req.session.redirectUrl = null;
     }
-    //this seems to be pretty  tricky to get to work properly
-    //res.redirect(redirectUrl);
-    res.redirect('/');
+    // this seems to be pretty  tricky to get to work properly
+    // RVB 25102014 Seems to work both for hitting login and when you are asked to login from a world
+    res.redirect(redirectUrl);
 };
 
 //Start the VWF HTTP server
