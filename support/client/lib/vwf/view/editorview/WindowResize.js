@@ -85,8 +85,24 @@ define({
                     $('#glyphOverlay').css('left', $('#index-vwf').offset().left);
                     $('#glyphOverlay').css('top', parseInt($('#index-vwf').css('top')));
                 }
+            } else if (true) { // TODO: Add config variable for IRC layout
+                $('#vwf-root').css('overflow', 'visible');
+                $('#vwf-root').css('left', '0px');
+                $('#vwf-root').css('top', '0px');
+                $('#index-vwf').css('height', $(window).height() - 270);
+                $('#index-vwf').css('width', $(window).width());
+                $('#index-vwf').attr('height', $(window).height() - 270);
+                $('#index-vwf').attr('width', $(window).width());
+                $('#index-vwf').css('top', 0 + 'px');
+                $('#index-vwf').css('left', 0 + 'px');
+                $('#irc-root').show();
+                $('#irc-root').css('position','absolute');
+                $('#irc-root').css('bottom','0px');
+                $('#irc-root').css('height', '270px');
+                $('#irc-root').attr('height', '270px');
+                $('#irc-root').attr('width', $(window).width());
+                $('#irc-root').css('width', $(window).width());
             } else {
-
                 $('#vwf-root').css('overflow', 'visible');
                 $('#vwf-root').css('left', '0px');
                 $('#vwf-root').css('top', '0px');

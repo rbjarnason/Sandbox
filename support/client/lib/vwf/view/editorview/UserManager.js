@@ -329,12 +329,17 @@ define(function() {
                     alert(data.responseText);
                     return;
                 }
+
+                if (profile && $('#irc-placeholder').html()=="" && true) { // TODO: Add IRC to config
+                    var ircUserName = profile.Username.replace(" ", "_");
+                    var iframeTxt = '<iframe src="https://irc.yrpri.org:7778/?nick='+ircUserName+'" style="border:0;position:absolute;bottom:0px;left:320px;width:70%;height:270px;"></iframe>';
+                    $('#irc-placeholder').html(iframeTxt);
+                }
             }
             $('#MenuLogInicon').addClass('icondisabled')
             $('#MenuLogOuticon').removeClass('icondisabled');
             $('#MenuLogIn').attr('disabled', 'disabled');
             $('#MenuLogOut').removeAttr('disabled');
-
 
             this.PlayerProto = {
                 extends: 'character.vwf',
