@@ -56,8 +56,8 @@ methods:
     var worldpos = this.transformAPI.getWorldPosition();
     var _offset = this.Offset.internal_val.slice();
     //console.log(_offset);
-    _offset[0] = _offset[0]+=vwf.random(vwf.application()) * 8 - 5;
-    _offset[2] = _offset[2]+=Math.floor((vwf.random(vwf.application()) * 2) + 0);
+    _offset[0] = _offset[0]+=vwf.random(vwf.application()) * 10 - 5;
+    _offset[2] = _offset[2]+=Math.floor((vwf.random(vwf.application()) * 4) + 0);
     console.log(_offset);
     var targetTransform = worldpos;
     //console.log(worldpos);
