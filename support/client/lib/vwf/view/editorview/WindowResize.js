@@ -94,13 +94,17 @@ define({
                 var topBarHeight = 77;
                 $("#header-root").css("width", $(window).width());
                 $("#header-root").attr("width", $(window).width());
+                $('#header-root').css('overflow', 'absolute');
+                $('#header-root').css('left', '0px');
+                $('#header-root').css('top', '0px');
+                $('#header-root').css('height', topBarHeight + 'px');
                 $("#header-root").show();
                 $('#vwf-root').css('overflow', 'visible');
                 $('#vwf-root').css('left', '0px');
-                $('#vwf-root').css('top', topBarHeight);
-                $('#index-vwf').css('height', $(window).height() - ircWindowHeight - topBarHeight);
+                $('#vwf-root').css('top', '0px');
+                $('#index-vwf').css('height', $(window).height() - ircWindowHeight);
                 $('#index-vwf').css('width', $(window).width());
-                $('#index-vwf').attr('height', $(window).height() - ircWindowHeight - topBarHeight);
+                $('#index-vwf').attr('height', $(window).height() - ircWindowHeight);
                 $('#index-vwf').attr('width', $(window).width());
                 $('#index-vwf').css('top', topBarHeight + 'px');
                 $('#index-vwf').css('left', 0 + 'px');
@@ -111,6 +115,10 @@ define({
                 $('#irc-root').attr('height', ircWindowHeight + 'px');
                 $('#irc-root').attr('width', $(window).width());
                 $('#irc-root').css('width', $(window).width());
+
+                $('#glyphOverlay').css('position', 'absolute');
+                $('#glyphOverlay').css('left', $('#index-vwf').offset().left);
+                $('#glyphOverlay').css('top', parseInt($('#index-vwf').css('top')));
             } else {
                 $('#vwf-root').css('overflow', 'visible');
                 $('#vwf-root').css('left', '0px');

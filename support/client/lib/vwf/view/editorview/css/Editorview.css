@@ -605,6 +605,13 @@ font-weight: bold;
 		left: 0px;
 	
 	}
+	#header-root {
+		z-index: 100;
+		position: fixed;
+		width: 100%;
+		background-color: #fff;
+		background: #fff;
+	}
 	#toolbar
 	{
 		z-index: 100;
