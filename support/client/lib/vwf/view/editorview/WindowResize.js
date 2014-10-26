@@ -86,20 +86,29 @@ define({
                     $('#glyphOverlay').css('top', parseInt($('#index-vwf').css('top')));
                 }
             } else if (true) { // TODO: Add config variable for IRC layout
+                //TODO If little screen height, have chat window less high
+                var ircWindowHeight = 270;
+                if ($(window).height()<800) {
+                    ircWindowHeight = 200;
+                }
+                var topBarHeight = 77;
+                $("#header-root").css("width", $(window).width());
+                $("#header-root").attr("width", $(window).width());
+                $("#header-root").show();
                 $('#vwf-root').css('overflow', 'visible');
                 $('#vwf-root').css('left', '0px');
-                $('#vwf-root').css('top', '0px');
-                $('#index-vwf').css('height', $(window).height() - 270);
+                $('#vwf-root').css('top', topBarHeight);
+                $('#index-vwf').css('height', $(window).height() - ircWindowHeight - topBarHeight);
                 $('#index-vwf').css('width', $(window).width());
-                $('#index-vwf').attr('height', $(window).height() - 270);
+                $('#index-vwf').attr('height', $(window).height() - ircWindowHeight - topBarHeight);
                 $('#index-vwf').attr('width', $(window).width());
-                $('#index-vwf').css('top', 0 + 'px');
+                $('#index-vwf').css('top', topBarHeight + 'px');
                 $('#index-vwf').css('left', 0 + 'px');
                 $('#irc-root').show();
                 $('#irc-root').css('position','absolute');
                 $('#irc-root').css('bottom','0px');
-                $('#irc-root').css('height', '270px');
-                $('#irc-root').attr('height', '270px');
+                $('#irc-root').css('height', ircWindowHeight + 'px');
+                $('#irc-root').attr('height', ircWindowHeight + 'px');
                 $('#irc-root').attr('width', $(window).width());
                 $('#irc-root').css('width', $(window).width());
             } else {
