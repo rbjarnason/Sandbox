@@ -1,0 +1,33 @@
+extends: 'http://vwf.example.com/behavior.vwf'
+properties:
+  type: behavior
+  NotProto: null
+  EditorData:
+    Active:
+      property: Active
+      displayname: Active
+      type: check
+  Target: line ID
+  DisplayName: BringMeHome
+methods:
+  initialize: "   "
+  bringMeHome: |
+    var player =  _UserManager.GetAvatarForClientID(this.client);
+    player.transformAPI.setPosition(1 + vwf.random(vwf.application()) * 8 - 5, 125 + vwf.random(vwf.application()) * 8 - 5, 40 + vwf.random(vwf.application()) * 8 - 5);
+
+events:
+  pointerOver:
+    parameters:
+      - '    eventData'
+      - '    nodeData    '
+    body: "   if(this.client == this.moniker)\n {\n     $('#index-vwf').css('cursor','pointer');\n }"
+  pointerOut:
+    parameters:
+      - '    eventData'
+      - '    nodeData    '
+    body: "    if(this.client == this.moniker)\n {\n     $('#index-vwf').css('cursor','default');\n }"
+  pointerClick:
+    parameters:
+      - '  eventData'
+      - '  nodeData  '
+    body: "this.bringMeHome();"

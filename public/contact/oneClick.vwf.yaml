@@ -52,7 +52,7 @@ properties:
 methods:
   initialize: "   "
   bringPlayerToMe: |
-    var player =  _UserManager.GetAvatarForClientID(this.client)
+    var player =  _UserManager.GetAvatarForClientID(this.client);
     var worldpos = this.transformAPI.getWorldPosition();
     var _offset = this.Offset.internal_val.slice();
     //console.log(_offset);
