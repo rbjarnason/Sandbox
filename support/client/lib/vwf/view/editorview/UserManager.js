@@ -444,7 +444,7 @@ define(function() {
 
             if (!profile) profile = {};
 
-			this.PlayerProto.source = profile.avatarModel || './avatars/avatar_0001_01.dae';
+			this.PlayerProto.source = profile.avatarModel || './avatars/avatar_0002_01.dae';
 
             this.PlayerProto.properties.cycles = {
                 stand: {
