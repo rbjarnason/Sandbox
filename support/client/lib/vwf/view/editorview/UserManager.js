@@ -335,6 +335,20 @@ define(function() {
                     var ircChannelName = require( "vwf/utility" ).removeDiacritics("#"+statedata.title.replace(/ /g, "_"));
                     var iframeTxt = '<iframe src="https://irc.yrpri.org:7778/?nick='+ircUserName+'_?'+ircChannelName+'" style="border:0;width:100%;height:100%;"></iframe>';
                     $('#irc-placeholder').html(iframeTxt);
+                    $('#set3rdPersonMode').click(function(e) {
+                        _dView.setCameraDefault();
+                        vwf.models[0].model.nodes['index-vwf'].followObject(vwf.models[0].model.nodes[_UserManager.GetCurrentUserID()]);
+                        vwf.models[0].model.nodes['index-vwf'].setCameraMode('3RDPerson');
+                    });
+                    $('#setOrbitMode').click(function(e) {
+                        _dView.setCameraDefault();
+                        var campos = [_Editor.findcamera().position.x, _Editor.findcamera().position.y, _Editor.findcamera().position.z];
+                        var ray = _Editor.GetCameraCenterRay();
+                        var dxy = _Editor.intersectLinePlane(ray, campos, [0, 0, 0], _Editor.WorldZ);
+                        var newintersectxy = MATH.addVec3(campos, MATH.scaleVec3(ray, dxy));
+                        vwf.models[0].model.nodes['index-vwf'].orbitPoint(newintersectxy);
+                        vwf.models[0].model.nodes['index-vwf'].updateCamera();
+                    });
                 }
             }
             $('#MenuLogInicon').addClass('icondisabled')
