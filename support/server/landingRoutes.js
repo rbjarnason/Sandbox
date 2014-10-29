@@ -163,8 +163,11 @@ routesMap = {
     },
     'createNotLoggedIn': {
         layout: 'plain'
+    },
+    'irChat': {
+        layout: 'plain',
+        requiresLogin: true
     }
-
 };
 
 

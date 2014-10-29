@@ -32,12 +32,12 @@
         },
         "type": "asset"
     },
-    "Barrel": {
-        "url": "./contentlibraries/entities/vwf/barrel.vwf.json",
-        "preview": "./contentlibraries/entities/thumbs/barrel.jpg",
+    "Polar Bear": {
+        "url": "./contentlibraries/entities/vwf/polarbear.vwf.json",
+        "preview": "./contentlibraries/entities/thumbs/fire.jpg",
         "dropPreview": {
-            "url": "./contentlibraries/entities/assets/barrel.json",
-            "type": "subDriver/threejs/asset/vnd.osgjs+json+compressed"
+            "url": "./contentlibraries/entities/assets/polarBear/polarbear.dae",
+            "type": "subDriver/threejs/asset/vnd.collada+xml"
         },
         "type": "asset"
     },

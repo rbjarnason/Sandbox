@@ -1,0 +1,122 @@
+{
+  "extends": "asset.vwf",
+  "id": "asset-vwf-9a6aa13-4t4a-5e6d-dd46-641fd0111af9",
+  "properties": {
+    "DisplayName": "Polar Bear",
+    "___physics_activation_state": 1,
+    "___physics_deactivation_time": 0,
+    "___physics_velocity_angular": [
+      0,
+      0,
+      0
+    ],
+    "___physics_velocity_linear": [
+      0,
+      0,
+      0
+    ],
+    "animationEnd": 101,
+    "animationFrame": 49.74,
+    "animationStart": 0,
+    "animationState": 1,
+    "materialDef": {
+      "alpha": 1,
+      "ambient": {
+        "b": 1,
+        "g": 1,
+        "r": 1
+      },
+      "color": {
+        "b": 1,
+        "g": 1,
+        "r": 1
+      },
+      "emit": {
+        "b": 0.32156862745098,
+        "g": 0.32156862745098,
+        "r": 0.32156862745098
+      },
+      "layers": [
+        {
+          "alpha": 0.88,
+          "mapInput": 0,
+          "mapTo": 1,
+          "offsetx": 0,
+          "offsety": 0,
+          "scalex": 1,
+          "scaley": 1,
+          "src": "./contentlibraries/entities/assets/polarBear/PolarD.jpg"
+        },
+        {
+          "alpha": 1,
+          "blendMode": 0,
+          "mapInput": 0,
+          "mapTo": "4",
+          "offsetx": 0,
+          "offsety": 0,
+          "rot": 0,
+          "scalex": 1,
+          "scaley": 1,
+          "src": "./contentlibraries/entities/assets/polarBear/PolarN.jpg"
+        },
+        {
+          "alpha": 1,
+          "blendMode": 0,
+          "mapInput": 0,
+          "mapTo": "7",
+          "offsetx": 0,
+          "offsety": 0,
+          "rot": 0,
+          "scalex": 1,
+          "scaley": 1,
+          "src": "./contentlibraries/entities/assets/polarBear/PolarO.jpg"
+        }
+      ],
+      "morphTargets": false,
+      "reflect": 0,
+      "shininess": 5.55,
+      "side": 2,
+      "skinning": true,
+      "specularColor": {
+        "b": 0.737254901960784,
+        "g": 0.92156862745098,
+        "r": 0.905882352941176
+      },
+      "specularLevel": 4.7,
+      "type": "phong"
+    },
+    "owner": "Rob",
+    "transform": [
+      0.15243586897850037,
+      0,
+      -1.7423508167266846,
+      0,
+      0,
+      1.7490062713623047,
+      0,
+      0,
+      1.7423508167266846,
+      0,
+      0.15243586897850037,
+      0,
+      -0.6002154350280762,
+      -0.10529123991727829,
+      0.8100000023841858,
+      1
+    ],
+    "translation": [
+      -0.000215434120690849,
+      -0.105291242765994,
+      0.01
+    ]
+  },
+  "random": {
+    "c": 1,
+    "s0": 0.230201750528067,
+    "s1": 0.333461093017831,
+    "s2": 0.0268391761928797
+  },
+  "sequence": 0,
+  "source": "./contentlibraries/entities/assets/polarBear/polarbear.dae",
+  "type": "subDriver/threejs/asset/vnd.collada+xml"
+}
