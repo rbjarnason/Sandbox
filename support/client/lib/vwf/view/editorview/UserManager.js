@@ -14,7 +14,7 @@ define(function() {
     function getParameterByName(name) {
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
         var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-            results = regex.exec(location.search);
+            results = regex.exec(window.location.href.replace("#_=_",""));
         return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
     }
 
@@ -350,7 +350,7 @@ define(function() {
                         window.location = locationString;
                     });
 
-                    if (getParameterByName("no3d") || getParameterByName("?no3d") || getParameterByName("?no3d#")) {
+                    if (getParameterByName("no3d") || getParameterByName("?no3d") || getParameterByName("?no3d#") || getParameterByName("#_=_?no3d")) {
                         window.location = locationString+"&no3d=1";
                     }
 
