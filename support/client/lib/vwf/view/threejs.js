@@ -1639,10 +1639,11 @@ define(["module", "vwf/view", "vwf/model/threejs/OculusRiftEffect", "vwf/model/t
 
                     //just throw out to a page. Could be a custom error warning. 
 
-                    window.location = 'http://get.webgl.org/';
+
                     window.onbeforeunload = null;
                     window.onunload = null;
 
+                    setTimeout(function() { window.location = location.href+"?no3d=1"; }, 500);
                 }
                 if (sceneNode.renderer.setFaceCulling)
                     sceneNode.renderer.setFaceCulling(false);

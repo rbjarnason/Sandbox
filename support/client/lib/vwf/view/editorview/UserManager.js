@@ -343,16 +343,16 @@ define(function() {
                     var iframeTxt = '<iframe src="https://irc.yrpri.org:7778/?nick='+ircUserName+'_?'+ircChannelName+'" style="border:0;width:100%;height:100%;"></iframe>';
                     $('#irc-placeholder').html(iframeTxt);
 
-                    var regExp = new RegExp(window.appPath+".*\/");
-                    var id = regExp.exec(window.location.pathname.toString()).toString();
-                    var locationString = "/contact/ircChat?ircChannel="+ircChannelName.substring(1)+"&id="+id;
+                    var locationString = "/contact/ircChat?ircChannel="+ircChannelName.substring(1)+"&id="+window.location.pathname;
 
-                    debugger;
-                    var textalinkTxt = '<h3><a href="#">Texta útgáfa</a></h3>';
-                    $('#2dLink').html(textalinkTxt);
+                    $('#2dLink').html('<h3><a href="#">Texta útgáfa</a></h3>');
                     $('#2dLink').click(function(e) {
                         window.location = locationString;
                     });
+
+                    if (getParameterByName("no3d") || getParameterByName("?no3d") || getParameterByName("?no3d#")) {
+                        window.location = locationString+"&no3d=1";
+                    }
 
                     $('#set3rdPersonMode').click(function(e) {
                         _dView.setCameraDefault();
