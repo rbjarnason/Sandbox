@@ -56,7 +56,11 @@ function getRoot() {
 
 }
 
-exports.acceptedRoutes = ['createNotLoggedIn', 'home', 'tools', 'performancetest', 'examples', 'settings', 'restore', 'createNew', 'welcome', 'search', 'forgotPassword', 'editProfile', 'updatePassword', 'test', 'avatar', 'sandbox', 'index', 'create', 'signup', 'login', 'logout', 'edit', 'remove', 'history', 'user', 'worlds', 'admin', 'admin/users', 'admin/worlds', 'admin/edit', 'publish','ircChat'];
+exports.acceptedRoutes = ['createNotLoggedIn', 'home', 'tools', 'performancetest', 'examples',
+                          'settings', 'restore', 'createNew', 'welcome', 'search', 'forgotPassword',
+                          'editProfile', 'updatePassword', 'test', 'avatar', 'sandbox', 'index', 'create', 'signup',
+                          'login', 'logout', 'edit', 'remove', 'history', 'user', 'worlds', 'admin', 'admin/users',
+                          'admin/worlds', 'admin/edit', 'publish','ircChat','betriHverfiNetfundur'];
 routesMap = {
     'sandbox': {
         template: 'index'
@@ -122,7 +126,7 @@ routesMap = {
         requiresLogin: true
     },
     'index': {
-        home: true
+        betriHverfiNetfundur: true
     },
     'avatar': {
         avatar: true,
@@ -167,6 +171,10 @@ routesMap = {
     'ircChat': {
         layout: 'ircChatLayout',
         requiresLogin: true
+    },
+    'betriHverfiNetfundur': {
+        layout: 'ircChatLayout',
+        requiresLogin: false
     }
 };
 
