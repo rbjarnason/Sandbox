@@ -119,10 +119,6 @@ define({
                 $('#glyphOverlay').css('position', 'absolute');
                 $('#glyphOverlay').css('left', $('#index-vwf').offset().left);
                 $('#glyphOverlay').css('top', parseInt($('#index-vwf').css('top')));
-                if ($(window).height()<400) {
-                    $('#irc-root').show();
-                }
-
             } else {
                 $('#vwf-root').css('overflow', 'visible');
                 $('#vwf-root').css('left', '0px');
