@@ -1643,10 +1643,14 @@ define(["module", "vwf/view", "vwf/model/threejs/OculusRiftEffect", "vwf/model/t
                     window.onbeforeunload = null;
                     window.onunload = null;
 
-                    setTimeout(function() { window.location = location.href+"?no3d=1"; }, 500);
+                    setTimeout(function() { window.location = location.href+"?no3d=WebGL"; }, 500);
                 }
-                if (sceneNode.renderer.setFaceCulling)
-                    sceneNode.renderer.setFaceCulling(false);
+                if (sceneNode.renderer) {
+                    if (sceneNode.renderer.setFaceCulling)
+                        sceneNode.renderer.setFaceCulling(false);
+                } else {
+                    setTimeout(function() { window.location = location.href+"?no3d=WebGL"; }, 500);
+                }
             }
 
 

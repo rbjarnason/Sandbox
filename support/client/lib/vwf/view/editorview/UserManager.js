@@ -351,7 +351,13 @@ define(function() {
                     });
 
                     if (getParameterByName("no3d") || getParameterByName("?no3d") || getParameterByName("?no3d#") || getParameterByName("#_=_?no3d")) {
-                        window.location = locationString+"&no3d=1";
+                        window.location = locationString+"&no3d=WebGL";
+                    }
+
+                    var md = new MobileDetect(window.navigator.userAgent);
+
+                    if (md.mobile() || md.phone() || !md.tablet()) {
+                        window.location = locationString+"&no3d=Mobile";
                     }
 
                     $('#set3rdPersonMode').click(function(e) {
