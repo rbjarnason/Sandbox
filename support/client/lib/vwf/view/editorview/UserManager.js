@@ -11,6 +11,13 @@ define(function() {
         }
     }
 
+    function getParameterByName(name) {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+            results = regex.exec(location.search);
+        return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+
     function initialize() {
         this.currentUsername = null;
         $('#sidepanel').append("<div id='UserProfileWindow' class='ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion-content-active' style='padding-bottom:5px;overflow:hidden;height:auto'></div>");
@@ -335,6 +342,18 @@ define(function() {
                     var ircChannelName = require( "vwf/utility" ).removeDiacritics("#"+statedata.title.replace(/ /g, "_"));
                     var iframeTxt = '<iframe src="https://irc.yrpri.org:7778/?nick='+ircUserName+'_?'+ircChannelName+'" style="border:0;width:100%;height:100%;"></iframe>';
                     $('#irc-placeholder').html(iframeTxt);
+
+                    var regExp = new RegExp(window.appPath+".*\/");
+                    var id = regExp.exec(window.location.pathname.toString()).toString();
+                    var locationString = "/contact/ircChat?ircChannel="+ircChannelName.substring(1)+"&id="+id;
+
+                    debugger;
+                    var textalinkTxt = '<h3><a href="#">Texta útgáfa</a></h3>';
+                    $('#2dLink').html(textalinkTxt);
+                    $('#2dLink').click(function(e) {
+                        window.location = locationString;
+                    });
+
                     $('#set3rdPersonMode').click(function(e) {
                         _dView.setCameraDefault();
                         vwf.models[0].model.nodes['index-vwf'].followObject(vwf.models[0].model.nodes[_UserManager.GetCurrentUserID()]);

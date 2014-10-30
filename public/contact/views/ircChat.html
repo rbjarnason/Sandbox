@@ -3,29 +3,30 @@
     <div id="header-br-link" style="width:30%;float:left;">
       <a href="/contact/allWorlds/0"><img src="https://s3.amazonaws.com/yrpri-direct-asset/BetriHverfi/UI/header_bh_logo.png" heigh="75"/></a>
     </div>
-    <div id="header-movement" style="width:25%;float:left;">
+    <div id="header-movement" style="width:10%;float:left;">
       <img id="openHelp" src="https://s3.amazonaws.com/yrpri-direct-asset/BetriHverfi/UI/header_button_question.png" heigh="75"/>
     </div>
     <div id="header-new-idea" style="width:20%;padding-bottom:20px;padding-top:20px;float:left;">
       <a target="_blank" href="https://betri-hverfi-laugardalur-2015.betrireykjavik.is/ideas/new"><img src="https://s3.amazonaws.com/yrpri-direct-asset/BetriHverfi/UI/header_button_new_idea.png" heigh="75"/></a>
     </div>
-    <div id="header-sm" style="width:15%;padding-bottom:20px;padding-top:10px;float:left;color:#326ba8;">
-      <h1>Laugardalur 2015</h1>
+    <div id="header-sm" style="width:30%;padding-bottom:20px;padding-top:10px;float:left;color:#326ba8;">
+      <h2>Laugardalur 2015</h2>
     </div>
     <div id="header-sm" style="width:10%;padding-bottom:20px;padding-top:10px;float:right;color:#000;">
-      Facebook Like
+      Facebook Like<br>
+      <a id="3dWorld" href="#" onclick="go3D();">3D Útgáfa</a>
     </div>
   </div>
-  <div>Hello</div>
-  <div id="irc-root" style="width:100%;position:absolute;bottom:0px;">
+  <div id="irc-root" style="width:100%;position:absolute;bottom:0px;top:80px;">
     <div style="width:20%;height:100%;float:left;">
-      <iframe src="//www.youtube.com/embed/NUlU_FcMRl4?rel=0&autoplay=1" frameborder="0" allowfullscreen height="100%" width="100%" style='border:0;'></iframe>
+      <iframe src="//www.youtube.com/embed/NUlU_FcMRl4" frameborder="0" allowfullscreen height="100%" width="100%" style='border:0;'></iframe>
     </div>
     <div id="irc-placeholder" style="height:100%;width:80%;float:right;"></div>
   </div>
 </div>
 
 <script type="text/javascript">
+    // ?rel=0&autoplay=1
     function removeDiacritics( str ) {
       var defaultDiacriticsRemovalMap = [
         {
@@ -234,6 +235,9 @@
     return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
   }
 
+  function go3D() {
+    window.location = getParameterByName("id");
+  }
 
   $( document ).ready(function() {
     var ircUserName = removeDiacritics("{{user.Username}}").substring(0,28).replace(/ /g, "_");
