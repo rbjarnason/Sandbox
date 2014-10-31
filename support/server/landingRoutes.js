@@ -173,7 +173,7 @@ routesMap = {
         requiresLogin: true
     },
     'betriHverfiNetfundur': {
-        layout: 'ircChatLayout',
+        layout: 'layout',
         requiresLogin: false
     }
 };
