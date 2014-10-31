@@ -77,7 +77,7 @@ var xapi = require('./xapi');
 //localization
 var i18n = require("i18next");
 var option = {
-    //lng: 'en',
+    lng: 'is',
     resGetPath: (libpath.resolve("./locales/__lng__/__ns__.json"))
     //debug: true
 };
