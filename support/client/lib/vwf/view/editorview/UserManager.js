@@ -350,13 +350,13 @@ define(function() {
                         window.location = locationString;
                     });
 
-                    if (getParameterByName("no3d") || getParameterByName("?no3d") || getParameterByName("?no3d#") || getParameterByName("#_=_?no3d")) {
+                    if (window.glWorking && window.glWorking===false) {
                         window.location = locationString+"&no3d=WebGL";
                     }
 
                     var md = new MobileDetect(window.navigator.userAgent);
 
-                    if (md.mobile() || md.phone() || !md.tablet()) {
+                    if (md.mobile() || md.phone() || md.tablet()) {
                         window.location = locationString+"&no3d=Mobile";
                     }
 

@@ -1632,6 +1632,7 @@ define(["module", "vwf/view", "vwf/model/threejs/OculusRiftEffect", "vwf/model/t
                         g: 1,
                         b: 1
                     }, 1.0);
+                    window.glWorking = true;
                 } else {
 
                     //lets not fall back on canvas renderer. there just is no point trying to do this without it.
@@ -1643,13 +1644,13 @@ define(["module", "vwf/view", "vwf/model/threejs/OculusRiftEffect", "vwf/model/t
                     window.onbeforeunload = null;
                     window.onunload = null;
 
-                    setTimeout(function() { window.location = location.href+"?no3d=WebGL"; }, 500);
+                    window.glWorking = false;
                 }
                 if (sceneNode.renderer) {
                     if (sceneNode.renderer.setFaceCulling)
                         sceneNode.renderer.setFaceCulling(false);
                 } else {
-                    setTimeout(function() { window.location = location.href+"?no3d=WebGL"; }, 500);
+                    window.glWorking = false;
                 }
             }
 
