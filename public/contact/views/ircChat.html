@@ -253,7 +253,7 @@
   $( document ).ready(function() {
     var ircUserName = removeDiacritics("{{user.Username}}").substring(0,28).replace(/ /g, "_");
     var ircChannelName = "#"+getParameterByName("ircChannel").replace(/ /g, "_");
-    var iframeTxt = '<iframe src="https://irc.yrpri.org:7778/?nick='+ircUserName+'_?'+ircChannelName+'" style="border:0;width:100%;height:100%;"></iframe>';
+    var iframeTxt = '<iframe src="https://irc.yrpri.org/?nick='+ircUserName+'_?'+ircChannelName+'" style="border:0;width:100%;height:100%;"></iframe>';
     $('#irc-placeholder').html(iframeTxt);
     if ($(window).width()<800) {
       $("#youTubeVideo").hide();
