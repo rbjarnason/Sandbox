@@ -136,25 +136,25 @@ routesMap = {
         requiresLogin: true
     },
     'logout': {
-        layout: 'plain',
+        layout: 'ircChatLayout',
         requiresLogin: true
     },
     'login': {
-        layout: 'plain'
+        layout: 'ircChatLayout'
     },
     'signup': {
-        layout: 'plain'
+        layout: 'ircChatLayout'
     },
     'updatePassword': {
-        layout: 'plain',
+        layout: 'ircChatLayout',
         requiresLogin: true
     },
     'editProfile': {
-        layout: 'plain',
+        layout: 'ircChatLayout',
         requiresLogin: true
     },
     'forgotPassword': {
-        layout: 'plain'
+        layout: 'ircChatLayout'
     },
     'search': {
         layout: 'plain'
