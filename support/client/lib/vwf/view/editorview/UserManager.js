@@ -20,31 +20,33 @@ define(function() {
 
     function icelandicHoodName(str) {
         if (str==="haaleiti og bustadir")
-            return "Háaleiti og bústaðir";
+            return ["Háaleiti og bústaðir","haaleiti"];
         else if (str==="betri haaleiti og bustadir")
-            return "Háaleiti og bústaðir";
+            return ["Háaleiti og bústaðir","haaleiti"];
+        else if (str==="betra breidholt")
+            return ["Breiðholt","breidholt"];
         else if (str==="betri vesturbaer")
-            return "Vesturbær";
+            return ["Vesturbær","vesturbaer"];
         else if (str==="betri midborg")
-            return "Miðbær";
+            return ["Miðborg","midborg"];
         else if (str==="betri midbaer")
-            return "Miðbær";
+            return ["Miðborg","midborg"];
         else if (str==="betri hlidar")
-            return "Hlíðar";
+            return ["Hlíðar","hlidar"];
         else if (str==="betri vesturbaer")
-            return "Vesturbær";
+            return ["Vesturbær","vesturbaer"];
         else if (str==="betri laugardalur")
-            return "Laugardalur";
+            return ["Laugardalur","laugardalur"];
         else if (str==="betri grafarvogur")
-            return "Grafarvogur";
+            return ["Grafarvogur","grafarvogur"];
         else if (str==="betra kjalarnes")
-            return "Kjalarnes";
+            return ["Kjalarnes","kjalarnes"];
         else if (str==="betra grafarholt")
-            return "Grafarholt";
+            return ["Grafarholt","grafarholt"];
         else if (str==="betri arbaer")
-            return "Árbær";
+            return ["Árbær","arbaer"];
         else
-            return "";
+            return ["",""];
     }
 
     function initialize() {
@@ -372,7 +374,8 @@ define(function() {
                     var iframeTxt = '<iframe src="https://irc.yrpri.org/?nick='+ircUserName+'_?'+ircChannelName+'" style="border:0;width:100%;height:100%;"></iframe>';
                     $('#irc-placeholder').html(iframeTxt);
 
-                    var locationString = "/contact/ircChat?ircChannel="+ircChannelName.substring(1)+"&id="+window.location.pathname;
+                    var locationString = "/contact/ircChat?ircChannel="+ircChannelName.substring(1)+"&id="+window.location.pathname+
+                                         "&hoodName="+icelandicHoodName(statedata.title)[0]+"&hoodCode="+icelandicHoodName(statedata.title)[1];
 
                     $('#2dLink').html('<h3><a href="#">Texta útgáfa</a></h3>');
                     $('#2dLink').click(function(e) {
@@ -405,7 +408,8 @@ define(function() {
                         vwf.models[0].model.nodes['index-vwf'].updateCamera();
                     });
 
-                    $("#hoodName").html(icelandicHoodName(statedata.title));
+                    $("#hoodName").html(icelandicHoodName(statedata.title)[0]);
+                    $("#newIdeaLink").attr("href","https://betri-hverfi-"+icelandicHoodName(statedata.title)[1]+"-2015.betrireykjavik.is/ideas/new");
                 }
             }
             $('#MenuLogInicon').addClass('icondisabled')
