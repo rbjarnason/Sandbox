@@ -1096,7 +1096,7 @@ function createProfileFromFacebook(profile, cb) {
     data = {
         id: profile.id,
         Username: profile.displayName,
-        Email: profile.emails[0].value
+        Email: profile.emails[0] ? profile.emails[0].value : null
     };
     createUser(profile.id, data, function(ok, err) {
         if (ok) {
