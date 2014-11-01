@@ -140,11 +140,8 @@ function center()
 	}
 
 	$(document).ready(function(){
-
-		docCookies.setItem('i18next',"is", null, '/', null, null);
 		$(".langLi").click(function(){
 			var lang = $(this).attr('lang');
-			alert(lang);
 			docCookies.setItem('i18next',lang, null, '/', null, null);
 			window.location.reload();
 		});
