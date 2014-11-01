@@ -18,6 +18,35 @@ define(function() {
         return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
     }
 
+    function icelandicHoodName(str) {
+        if (str==="haaleiti og bustadir")
+            return "Háaleiti og bústaðir";
+        else if (str==="betri haaleiti og bustadir")
+            return "Háaleiti og bústaðir";
+        else if (str==="betri vesturbaer")
+            return "Vesturbær";
+        else if (str==="betri midborg")
+            return "Miðbær";
+        else if (str==="betri midbaer")
+            return "Miðbær";
+        else if (str==="betri hlidar")
+            return "Hlíðar";
+        else if (str==="betri vesturbaer")
+            return "Vesturbær";
+        else if (str==="betri laugardalur")
+            return "Laugardalur";
+        else if (str==="betri grafarvogur")
+            return "Grafarvogur";
+        else if (str==="betra kjalarnes")
+            return "Kjalarnes";
+        else if (str==="betra grafarholt")
+            return "Grafarholt";
+        else if (str==="betri arbaer")
+            return "Árbær";
+        else
+            return "";
+    }
+
     function initialize() {
         this.currentUsername = null;
         $('#sidepanel').append("<div id='UserProfileWindow' class='ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion-content-active' style='padding-bottom:5px;overflow:hidden;height:auto'></div>");
@@ -365,6 +394,7 @@ define(function() {
                         vwf.models[0].model.nodes['index-vwf'].followObject(vwf.models[0].model.nodes[_UserManager.GetCurrentUserID()]);
                         vwf.models[0].model.nodes['index-vwf'].setCameraMode('3RDPerson');
                     });
+
                     $('#setOrbitMode').click(function(e) {
                         _dView.setCameraDefault();
                         var campos = [_Editor.findcamera().position.x, _Editor.findcamera().position.y, _Editor.findcamera().position.z];
@@ -374,6 +404,8 @@ define(function() {
                         vwf.models[0].model.nodes['index-vwf'].orbitPoint(newintersectxy);
                         vwf.models[0].model.nodes['index-vwf'].updateCamera();
                     });
+
+                    $("#hoodName").html(icelandicHoodName(statedata.title));
                 }
             }
             $('#MenuLogInicon').addClass('icondisabled')
