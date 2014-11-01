@@ -1023,7 +1023,7 @@ scripts:
         this.rel_y = -(parms.originalEvent.webkitMovementY || parms.originalEvent.mozMovementY || parms.originalEvent.MovementY)/1000 || this.rel_y;
       }
       
-      if((this.rightdown==true && this.middledown==false))
+      if((this.leftdown==true && this.middledown==false))
       {
         
         if(this.objectFollowed)
